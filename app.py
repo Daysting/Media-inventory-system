@@ -382,6 +382,54 @@ def search_image():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# Reporting endpoints
+@app.route('/api/reports/inventory-summary', methods=['GET'])
+def get_inventory_summary_report():
+    try:
+        summary = system.get_inventory_summary()
+        return jsonify({'success': True, 'summary': summary})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/reports/borrower-activity', methods=['GET'])
+def get_borrower_activity_report():
+    try:
+        report = system.get_borrower_activity_report()
+        return jsonify({'success': True, 'borrowers': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/reports/checkout-history', methods=['GET'])
+def get_checkout_history_report():
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        report = system.get_checkout_history_report(start_date, end_date)
+        return jsonify({'success': True, 'history': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/reports/genre-distribution', methods=['GET'])
+def get_genre_distribution_report():
+    try:
+        report = system.get_genre_distribution()
+        return jsonify({'success': True, 'genres': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/reports/overdue-items', methods=['GET'])
+def get_overdue_items_report():
+    try:
+        report = system.get_overdue_items()
+        return jsonify({'success': True, 'overdue': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @app.route('/api/diagnostics', methods=['GET'])
 def diagnostics():
     try:

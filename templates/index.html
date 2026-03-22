@@ -384,6 +384,7 @@
             <button class="tab-button" data-tab="movies">Movies</button>
             <button class="tab-button" data-tab="borrowers">Borrowers</button>
             <button class="tab-button" data-tab="checkout">Checkout/Return</button>
+            <button class="tab-button" data-tab="reports">Reports</button>
             <button class="tab-button" data-tab="tools">Tools & Diagnostics</button>
         </div>
 
@@ -704,6 +705,31 @@
 
             <div id="toolsOutput" style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; display: none;"></div>
         </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <h2>Reports & Analytics</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <button onclick="loadInventorySummary()" class="btn-success" style="padding: 1rem; font-size: 1rem; height: auto;">
+                    📊 Inventory Summary
+                </button>
+                <button onclick="loadBorrowerActivity()" class="btn-success" style="padding: 1rem; font-size: 1rem; height: auto;">
+                    👥 Borrower Activity
+                </button>
+                <button onclick="loadCheckoutHistory()" class="btn-success" style="padding: 1rem; font-size: 1rem; height: auto;">
+                    📅 Checkout History
+                </button>
+                <button onclick="loadGenreDistribution()" class="btn-success" style="padding: 1rem; font-size: 1rem; height: auto;">
+                    🎭 Genre Distribution
+                </button>
+                <button onclick="loadOverdueItems()" class="btn-success" style="padding: 1rem; font-size: 1rem; height: auto;">
+                    ⚠️ Overdue Items
+                </button>
+            </div>
+
+            <div id="reportsContainer"></div>
+        </div>
     </div>
 
     <!-- Edit Modals -->
@@ -795,6 +821,8 @@
                 loadBorrowers();
             } else if (tabName === 'checkout') {
                 loadCheckoutData();
+            } else if (tabName === 'reports') {
+                // Reports tab doesn't need initial load
             }
             currentTab = tabName;
         }
@@ -866,6 +894,235 @@
                 }
             } catch (error) {
                 showAlert('Image search failed: ' + error.message, 'error');
+            }
+        }
+
+        // Reports
+        async function loadInventorySummary() {
+            try {
+                const response = await fetch('/api/reports/inventory-summary');
+                const data = await response.json();
+                if (data.success) {
+                    const summary = data.summary;
+                    let html = '<h3>📊 Inventory Summary</h3>';
+                    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">';
+                    
+                    html += `<div class="stat-card" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                        <h3>Books</h3>
+                        <div class="value">${summary.books.total}</div>
+                        <small>${summary.books.owned} owned</small>
+                    </div>`;
+                    
+                    html += `<div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                        <h3>Video Games</h3>
+                        <div class="value">${summary.video_games.total}</div>
+                        <small>${summary.video_games.owned} owned</small>
+                    </div>`;
+                    
+                    html += `<div class="stat-card" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                        <h3>Movies</h3>
+                        <div class="value">${summary.movies.total}</div>
+                        <small>${summary.movies.owned} owned</small>
+                    </div>`;
+                    
+                    html += `<div class="stat-card" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        <h3>Borrowers</h3>
+                        <div class="value">${summary.borrowers.total}</div>
+                    </div>`;
+                    
+                    html += `<div class="stat-card" style="background: linear-gradient(135deg, #1abc9c, #16a085);">
+                        <h3>Checked Out</h3>
+                        <div class="value">${summary.checkouts.currently_checked_out}</div>
+                        <small>${summary.checkouts.total_history} total checkouts</small>
+                    </div>`;
+                    
+                    html += '</div>';
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error loading inventory summary: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading inventory summary: ' + error, 'error');
+            }
+        }
+
+        async function loadBorrowerActivity() {
+            try {
+                const response = await fetch('/api/reports/borrower-activity');
+                const data = await response.json();
+                if (data.success) {
+                    let html = '<h3>👥 Borrower Activity Report</h3>';
+                    if (data.borrowers.length === 0) {
+                        html += '<p>No borrower activity found.</p>';
+                    } else {
+                        html += '<table><thead><tr><th>Borrower</th><th>Currently Checked Out</th><th>Total Returned</th><th>Last Activity</th></tr></thead><tbody>';
+                        data.borrowers.forEach(borrower => {
+                            html += `<tr>
+                                <td>${borrower.name}</td>
+                                <td>${borrower.currently_checked_out}</td>
+                                <td>${borrower.total_returned}</td>
+                                <td>${borrower.last_activity || 'Never'}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error loading borrower activity: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading borrower activity: ' + error, 'error');
+            }
+        }
+
+        async function loadCheckoutHistory() {
+            try {
+                const response = await fetch('/api/reports/checkout-history');
+                const data = await response.json();
+                if (data.success) {
+                    let html = '<h3>📅 Checkout History Report</h3>';
+                    
+                    // Date filter controls
+                    html += '<div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">';
+                    html += '<label>Start Date: <input type="date" id="startDate"></label>';
+                    html += '<label>End Date: <input type="date" id="endDate"></label>';
+                    html += '<button onclick="filterCheckoutHistory()" class="btn-small">Filter</button>';
+                    html += '</div>';
+                    
+                    if (data.history.length === 0) {
+                        html += '<p>No checkout history found.</p>';
+                    } else {
+                        html += '<table><thead><tr><th>Borrower</th><th>Media</th><th>Type</th><th>Checkout Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
+                        data.history.forEach(item => {
+                            html += `<tr>
+                                <td>${item.borrower_name}</td>
+                                <td>${item.media_title || item.media_id}</td>
+                                <td>${item.media_type}</td>
+                                <td>${item.checkout_date}</td>
+                                <td>${item.return_date || '-'}</td>
+                                <td>${item.status}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error loading checkout history: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading checkout history: ' + error, 'error');
+            }
+        }
+
+        async function filterCheckoutHistory() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            let url = '/api/reports/checkout-history';
+            const params = [];
+            if (startDate) params.push(`start_date=${startDate}`);
+            if (endDate) params.push(`end_date=${endDate}`);
+            if (params.length > 0) url += '?' + params.join('&');
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.success) {
+                    let html = '<h3>📅 Checkout History Report</h3>';
+                    
+                    // Date filter controls
+                    html += '<div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">';
+                    html += '<label>Start Date: <input type="date" id="startDate" value="' + (startDate || '') + '"></label>';
+                    html += '<label>End Date: <input type="date" id="endDate" value="' + (endDate || '') + '"></label>';
+                    html += '<button onclick="filterCheckoutHistory()" class="btn-small">Filter</button>';
+                    html += '</div>';
+                    
+                    if (data.history.length === 0) {
+                        html += '<p>No checkout history found for the selected date range.</p>';
+                    } else {
+                        html += '<table><thead><tr><th>Borrower</th><th>Media</th><th>Type</th><th>Checkout Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
+                        data.history.forEach(item => {
+                            html += `<tr>
+                                <td>${item.borrower_name}</td>
+                                <td>${item.media_title || item.media_id}</td>
+                                <td>${item.media_type}</td>
+                                <td>${item.checkout_date}</td>
+                                <td>${item.return_date || '-'}</td>
+                                <td>${item.status}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error filtering checkout history: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error filtering checkout history: ' + error, 'error');
+            }
+        }
+
+        async function loadGenreDistribution() {
+            try {
+                const response = await fetch('/api/reports/genre-distribution');
+                const data = await response.json();
+                if (data.success) {
+                    let html = '<h3>🎭 Genre Distribution</h3>';
+                    const genres = data.genres;
+                    
+                    ['books', 'video_games', 'movies'].forEach(mediaType => {
+                        const typeGenres = genres[mediaType];
+                        if (typeGenres.length > 0) {
+                            html += `<h4>${mediaType.replace('_', ' ').toUpperCase()}</h4>`;
+                            html += '<table style="margin-bottom: 2rem;"><thead><tr><th>Genre</th><th>Count</th></tr></thead><tbody>';
+                            typeGenres.forEach(genre => {
+                                html += `<tr><td>${genre.genre}</td><td>${genre.count}</td></tr>`;
+                            });
+                            html += '</tbody></table>';
+                        }
+                    });
+                    
+                    if (html === '<h3>🎭 Genre Distribution</h3>') {
+                        html += '<p>No genre data available.</p>';
+                    }
+                    
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error loading genre distribution: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading genre distribution: ' + error, 'error');
+            }
+        }
+
+        async function loadOverdueItems() {
+            try {
+                const response = await fetch('/api/reports/overdue-items');
+                const data = await response.json();
+                if (data.success) {
+                    let html = '<h3>⚠️ Potentially Overdue Items</h3>';
+                    html += '<p style="color: #7f8c8d; margin-bottom: 1rem;">Items checked out for more than 30 days (simplified overdue check)</p>';
+                    
+                    if (data.overdue.length === 0) {
+                        html += '<p style="color: #27ae60;">No potentially overdue items found.</p>';
+                    } else {
+                        html += '<table><thead><tr><th>Media</th><th>Type</th><th>Borrower</th><th>Checkout Date</th></tr></thead><tbody>';
+                        data.overdue.forEach(item => {
+                            html += `<tr>
+                                <td>${item.media_title || item.media_id}</td>
+                                <td>${item.media_type}</td>
+                                <td>${item.borrower_name}</td>
+                                <td>${item.checkout_date}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                    document.getElementById('reportsContainer').innerHTML = html;
+                } else {
+                    showAlert('Error loading overdue items: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading overdue items: ' + error, 'error');
             }
         }
 

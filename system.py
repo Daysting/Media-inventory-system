@@ -143,6 +143,231 @@ def search_google_image(query):
             return src
 
     raise RuntimeError('No image URL could be extracted from Google image search response.')
+
+
+# Reporting Functions
+def get_inventory_summary():
+    """Get summary statistics for all media inventory."""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    # Books summary
+    cursor.execute("SELECT COUNT(*), SUM(CASE WHEN status = 'owned' THEN 1 ELSE 0 END) FROM books")
+    books_total, books_owned = cursor.fetchone()
+
+    # Video games summary
+    cursor.execute("SELECT COUNT(*), SUM(CASE WHEN status = 'owned' THEN 1 ELSE 0 END) FROM video_games")
+    games_total, games_owned = cursor.fetchone()
+
+    # Movies summary
+    cursor.execute("SELECT COUNT(*), SUM(CASE WHEN status = 'owned' THEN 1 ELSE 0 END) FROM movies")
+    movies_total, movies_owned = cursor.fetchone()
+
+    # Borrowers summary
+    cursor.execute("SELECT COUNT(*) FROM borrowers")
+    borrowers_total = cursor.fetchone()[0]
+
+    # Checkout summary
+    cursor.execute("SELECT COUNT(*) FROM checkout_history WHERE status = 'checked_out'")
+    currently_checked_out = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM checkout_history WHERE status = 'returned'")
+    total_checkouts = cursor.fetchone()[0]
+
+    conn.close()
+
+    return {
+        'books': {'total': books_total, 'owned': books_owned or 0},
+        'video_games': {'total': games_total, 'owned': games_owned or 0},
+        'movies': {'total': movies_total, 'owned': movies_owned or 0},
+        'borrowers': {'total': borrowers_total},
+        'checkouts': {'currently_checked_out': currently_checked_out, 'total_history': total_checkouts}
+    }
+
+
+def get_borrower_activity_report():
+    """Get detailed borrower activity report."""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT
+            b.id,
+            b.first_name,
+            b.last_name,
+            COUNT(CASE WHEN ch.status = 'checked_out' THEN 1 END) as currently_checked_out,
+            COUNT(CASE WHEN ch.status = 'returned' THEN 1 END) as total_returned,
+            MAX(ch.checkout_date) as last_activity
+        FROM borrowers b
+        LEFT JOIN checkout_history ch ON b.id = ch.borrower_id
+        GROUP BY b.id, b.first_name, b.last_name
+        ORDER BY total_returned DESC, currently_checked_out DESC
+    ''')
+
+    borrowers = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            'id': b[0],
+            'name': f"{b[1]} {b[2]}",
+            'currently_checked_out': b[3],
+            'total_returned': b[4],
+            'last_activity': b[5]
+        }
+        for b in borrowers
+    ]
+
+
+def get_checkout_history_report(start_date=None, end_date=None):
+    """Get checkout history report with optional date filtering."""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    query = '''
+        SELECT
+            ch.id,
+            ch.borrower_id,
+            b.first_name,
+            b.last_name,
+            ch.media_id,
+            ch.media_type,
+            CASE
+                WHEN ch.media_type = 'books' THEN bk.title
+                WHEN ch.media_type = 'video_games' THEN vg.title
+                WHEN ch.media_type = 'movies' THEN mv.title
+            END as media_title,
+            ch.checkout_date,
+            ch.return_date,
+            ch.status
+        FROM checkout_history ch
+        JOIN borrowers b ON ch.borrower_id = b.id
+        LEFT JOIN books bk ON ch.media_type = 'books' AND ch.media_id = bk.id
+        LEFT JOIN video_games vg ON ch.media_type = 'video_games' AND ch.media_id = vg.id
+        LEFT JOIN movies mv ON ch.media_type = 'movies' AND ch.media_id = mv.id
+    '''
+
+    params = []
+    if start_date or end_date:
+        conditions = []
+        if start_date:
+            conditions.append("ch.checkout_date >= ?")
+            params.append(start_date)
+        if end_date:
+            conditions.append("ch.checkout_date <= ?")
+            params.append(end_date)
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " ORDER BY ch.checkout_date DESC"
+
+    cursor.execute(query, params)
+    history = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            'id': h[0],
+            'borrower_id': h[1],
+            'borrower_name': f"{h[2]} {h[3]}",
+            'media_id': h[4],
+            'media_type': h[5],
+            'media_title': h[6],
+            'checkout_date': h[7],
+            'return_date': h[8],
+            'status': h[9]
+        }
+        for h in history
+    ]
+
+
+def get_genre_distribution():
+    """Get distribution of media by genre."""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    # Books by genre
+    cursor.execute('''
+        SELECT genre, COUNT(*) as count
+        FROM books
+        WHERE genre IS NOT NULL AND genre != ''
+        GROUP BY genre
+        ORDER BY count DESC
+    ''')
+    books_genres = cursor.fetchall()
+
+    # Video games by genre
+    cursor.execute('''
+        SELECT genre, COUNT(*) as count
+        FROM video_games
+        WHERE genre IS NOT NULL AND genre != ''
+        GROUP BY genre
+        ORDER BY count DESC
+    ''')
+    games_genres = cursor.fetchall()
+
+    # Movies by genre
+    cursor.execute('''
+        SELECT genre, COUNT(*) as count
+        FROM movies
+        WHERE genre IS NOT NULL AND genre != ''
+        GROUP BY genre
+        ORDER BY count DESC
+    ''')
+    movies_genres = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        'books': [{'genre': g[0], 'count': g[1]} for g in books_genres],
+        'video_games': [{'genre': g[0], 'count': g[1]} for g in games_genres],
+        'movies': [{'genre': g[0], 'count': g[1]} for g in movies_genres]
+    }
+
+
+def get_overdue_items():
+    """Get items that are currently checked out (simplified overdue check)."""
+    from datetime import datetime, timedelta
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    # For simplicity, consider items checked out for more than 30 days as "potentially overdue"
+    thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+
+    cursor.execute('''
+        SELECT
+            ch.media_id,
+            ch.media_type,
+            CASE
+                WHEN ch.media_type = 'books' THEN bk.title
+                WHEN ch.media_type = 'video_games' THEN vg.title
+                WHEN ch.media_type = 'movies' THEN mv.title
+            END as media_title,
+            b.first_name,
+            b.last_name,
+            ch.checkout_date
+        FROM checkout_history ch
+        JOIN borrowers b ON ch.borrower_id = b.id
+        LEFT JOIN books bk ON ch.media_type = 'books' AND ch.media_id = bk.id
+        LEFT JOIN video_games vg ON ch.media_type = 'video_games' AND ch.media_id = vg.id
+        LEFT JOIN movies mv ON ch.media_type = 'movies' AND ch.media_id = mv.id
+        WHERE ch.status = 'checked_out' AND ch.checkout_date < ?
+        ORDER BY ch.checkout_date ASC
+    ''', (thirty_days_ago,))
+
+    overdue = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            'media_id': o[0],
+            'media_type': o[1],
+            'media_title': o[2],
+            'borrower_name': f"{o[3]} {o[4]}",
+            'checkout_date': o[5]
+        }
+        for o in overdue
+    ]
     prefixes = {
         'books': '319721',
         'video_games': '319722',
