@@ -533,5 +533,308 @@ def update_movie(movie_id, title=None, director=None, cast=None, year_released=N
     print(f"Movie {movie_id} has been updated.")
     return True
 
+def check_database_integrity():
+    """Run comprehensive database integrity checks."""
+    print("=" * 60)
+    print("DATABASE INTEGRITY CHECK")
+    print("=" * 60)
+    
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    issues_found = 0
+    
+    # Check 1: Verify all tables exist
+    print("\n[1] Checking table existence...")
+    required_tables = ['books', 'video_games', 'movies', 'borrowers', 'checkout_history']
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    existing_tables = [row[0] for row in cursor.fetchall()]
+    
+    for table in required_tables:
+        if table in existing_tables:
+            print(f"  ✓ Table '{table}' exists")
+        else:
+            print(f"  ✗ Table '{table}' MISSING")
+            issues_found += 1
+    
+    # Check 2: Verify data counts
+    print("\n[2] Checking record counts...")
+    counts = {}
+    for table in required_tables:
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        count = cursor.fetchone()[0]
+        counts[table] = count
+        print(f"  - {table}: {count} records")
+    
+    # Check 3: Verify ID format compliance
+    print("\n[3] Checking ID format compliance...")
+    
+    # Check books IDs
+    cursor.execute("SELECT id FROM books WHERE id NOT LIKE '319721%' OR LENGTH(id) != 14")
+    bad_books = cursor.fetchall()
+    if bad_books:
+        print(f"  ✗ {len(bad_books)} book(s) with invalid ID format")
+        issues_found += len(bad_books)
+    else:
+        print(f"  ✓ All book IDs valid (319721xxxxxxxx format)")
+    
+    # Check video games IDs
+    cursor.execute("SELECT id FROM video_games WHERE id NOT LIKE '319722%' OR LENGTH(id) != 14")
+    bad_games = cursor.fetchall()
+    if bad_games:
+        print(f"  ✗ {len(bad_games)} video game(s) with invalid ID format")
+        issues_found += len(bad_games)
+    else:
+        print(f"  ✓ All video game IDs valid (319722xxxxxxxx format)")
+    
+    # Check movies IDs
+    cursor.execute("SELECT id FROM movies WHERE id NOT LIKE '319723%' OR LENGTH(id) != 14")
+    bad_movies = cursor.fetchall()
+    if bad_movies:
+        print(f"  ✗ {len(bad_movies)} movie(s) with invalid ID format")
+        issues_found += len(bad_movies)
+    else:
+        print(f"  ✓ All movie IDs valid (319723xxxxxxxx format)")
+    
+    # Check borrower IDs
+    cursor.execute("SELECT id FROM borrowers WHERE id NOT LIKE '21972%' OR LENGTH(id) != 14")
+    bad_borrowers = cursor.fetchall()
+    if bad_borrowers:
+        print(f"  ✗ {len(bad_borrowers)} borrower(s) with invalid ID format")
+        issues_found += len(bad_borrowers)
+    else:
+        print(f"  ✓ All borrower IDs valid (21972xxxxxxxxx format)")
+    
+    # Check 4: Verify foreign key integrity
+    print("\n[4] Checking foreign key integrity...")
+    cursor.execute("""
+        SELECT COUNT(*) FROM checkout_history 
+        WHERE borrower_id NOT IN (SELECT id FROM borrowers)
+    """)
+    orphaned_checkouts = cursor.fetchone()[0]
+    if orphaned_checkouts > 0:
+        print(f"  ✗ {orphaned_checkouts} checkout record(s) with non-existent borrower")
+        issues_found += orphaned_checkouts
+    else:
+        print(f"  ✓ No orphaned checkout records")
+    
+    # Check 5: Verify checkout_history validity
+    print("\n[5] Checking checkout history validity...")
+    cursor.execute("""
+        SELECT COUNT(*) FROM checkout_history 
+        WHERE status NOT IN ('checked_out', 'returned')
+    """)
+    invalid_status = cursor.fetchone()[0]
+    if invalid_status > 0:
+        print(f"  ✗ {invalid_status} checkout record(s) with invalid status")
+        issues_found += invalid_status
+    else:
+        print(f"  ✓ All checkout records have valid status")
+    
+    # Check 6: Verify required fields
+    print("\n[6] Checking required fields...")
+    
+    cursor.execute("SELECT COUNT(*) FROM books WHERE title IS NULL OR title = ''")
+    missing_titles = cursor.fetchone()[0]
+    if missing_titles > 0:
+        print(f"  ✗ {missing_titles} book(s) with missing title")
+        issues_found += missing_titles
+    else:
+        print(f"  ✓ All books have titles")
+    
+    cursor.execute("SELECT COUNT(*) FROM borrowers WHERE first_name IS NULL OR first_name = '' OR last_name IS NULL OR last_name = ''")
+    missing_names = cursor.fetchone()[0]
+    if missing_names > 0:
+        print(f"  ✗ {missing_names} borrower(s) with missing name")
+        issues_found += missing_names
+    else:
+        print(f"  ✓ All borrowers have names")
+    
+    conn.close()
+    
+    # Summary
+    print("\n" + "=" * 60)
+    if issues_found == 0:
+        print("✓ DATABASE IS HEALTHY - NO ISSUES FOUND")
+    else:
+        print(f"✗ DATABASE HAS {issues_found} ISSUE(S) DETECTED")
+    print("=" * 60 + "\n")
+    
+    return issues_found == 0
+
+def repair_database():
+    """Attempt to repair common database issues."""
+    print("=" * 60)
+    print("DATABASE REPAIR")
+    print("=" * 60)
+    
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    repairs_made = 0
+    
+    # Repair 1: Remove orphaned checkout history
+    print("\n[1] Checking for orphaned checkout records...")
+    cursor.execute("""
+        SELECT COUNT(*) FROM checkout_history 
+        WHERE borrower_id NOT IN (SELECT id FROM borrowers)
+    """)
+    orphaned_count = cursor.fetchone()[0]
+    if orphaned_count > 0:
+        cursor.execute("""
+            DELETE FROM checkout_history 
+            WHERE borrower_id NOT IN (SELECT id FROM borrowers)
+        """)
+        print(f"  ✓ Removed {orphaned_count} orphaned checkout record(s)")
+        repairs_made += 1
+    else:
+        print(f"  ✓ No orphaned records found")
+    
+    # Repair 2: Fix invalid checkout status
+    print("\n[2] Checking for invalid checkout status...")
+    cursor.execute("""
+        SELECT COUNT(*) FROM checkout_history 
+        WHERE status NOT IN ('checked_out', 'returned')
+    """)
+    invalid_status_count = cursor.fetchone()[0]
+    if invalid_status_count > 0:
+        cursor.execute("""
+            UPDATE checkout_history 
+            SET status = 'returned' 
+            WHERE status NOT IN ('checked_out', 'returned')
+        """)
+        print(f"  ✓ Fixed {invalid_status_count} invalid status record(s)")
+        repairs_made += 1
+    else:
+        print(f"  ✓ No invalid status records found")
+    
+    # Repair 3: Clean up empty titles
+    print("\n[3] Checking for missing required fields...")
+    cursor.execute("SELECT COUNT(*) FROM books WHERE title IS NULL OR title = ''")
+    missing_books = cursor.fetchone()[0]
+    if missing_books > 0:
+        cursor.execute("UPDATE books SET title = '[Unknown Title]' WHERE title IS NULL OR title = ''")
+        print(f"  ✓ Fixed {missing_books} book(s) with missing title")
+        repairs_made += 1
+    
+    cursor.execute("SELECT COUNT(*) FROM borrowers WHERE first_name IS NULL OR first_name = ''")
+    missing_first = cursor.fetchone()[0]
+    if missing_first > 0:
+        cursor.execute("UPDATE borrowers SET first_name = '[Unknown]' WHERE first_name IS NULL OR first_name = ''")
+        print(f"  ✓ Fixed {missing_first} borrower(s) with missing first name")
+        repairs_made += 1
+    
+    cursor.execute("SELECT COUNT(*) FROM borrowers WHERE last_name IS NULL OR last_name = ''")
+    missing_last = cursor.fetchone()[0]
+    if missing_last > 0:
+        cursor.execute("UPDATE borrowers SET last_name = '[Unknown]' WHERE last_name IS NULL OR last_name = ''")
+        print(f"  ✓ Fixed {missing_last} borrower(s) with missing last name")
+        repairs_made += 1
+    
+    conn.commit()
+    conn.close()
+    
+    print("\n" + "=" * 60)
+    print(f"REPAIR COMPLETE - {repairs_made} repair operation(s) performed")
+    print("=" * 60 + "\n")
+
+def run_diagnostics():
+    """Run full diagnostic tests on the system."""
+    print("=" * 60)
+    print("SYSTEM DIAGNOSTICS")
+    print("=" * 60)
+    
+    tests_passed = 0
+    tests_failed = 0
+    
+    # Test 1: Database connectivity
+    print("\n[TEST 1] Database Connectivity")
+    try:
+        conn = connect_to_database()
+        conn.close()
+        print("  ✓ Database connection successful")
+        tests_passed += 1
+    except Exception as e:
+        print(f"  ✗ Database connection failed: {e}")
+        tests_failed += 1
+        return
+    
+    # Test 2: Media ID generation
+    print("\n[TEST 2] Media ID Generation")
+    try:
+        test_book_id = generate_media_id('books')
+        test_game_id = generate_media_id('video_games')
+        test_movie_id = generate_media_id('movies')
+        
+        if test_book_id.startswith('319721') and len(test_book_id) == 14:
+            print(f"  ✓ Book ID generation working: {test_book_id}")
+            tests_passed += 1
+        else:
+            print(f"  ✗ Book ID format invalid: {test_book_id}")
+            tests_failed += 1
+        
+        if test_game_id.startswith('319722') and len(test_game_id) == 14:
+            print(f"  ✓ Video game ID generation working: {test_game_id}")
+            tests_passed += 1
+        else:
+            print(f"  ✗ Video game ID format invalid: {test_game_id}")
+            tests_failed += 1
+        
+        if test_movie_id.startswith('319723') and len(test_movie_id) == 14:
+            print(f"  ✓ Movie ID generation working: {test_movie_id}")
+            tests_passed += 1
+        else:
+            print(f"  ✗ Movie ID format invalid: {test_movie_id}")
+            tests_failed += 1
+    except Exception as e:
+        print(f"  ✗ ID generation failed: {e}")
+        tests_failed += 3
+    
+    # Test 3: Borrower ID generation
+    print("\n[TEST 3] Borrower ID Generation")
+    try:
+        test_borrower_id = generate_borrower_id()
+        if test_borrower_id.startswith('21972') and len(test_borrower_id) == 14:
+            print(f"  ✓ Borrower ID generation working: {test_borrower_id}")
+            tests_passed += 1
+        else:
+            print(f"  ✗ Borrower ID format invalid: {test_borrower_id}")
+            tests_failed += 1
+    except Exception as e:
+        print(f"  ✗ Borrower ID generation failed: {e}")
+        tests_failed += 1
+    
+    # Test 4: Database operations
+    print("\n[TEST 4] Database Operations")
+    try:
+        # Test add and retrieve
+        test_book = add_book('Diagnostic Test Book', 'Test Author', 2024)
+        conn = connect_to_database()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM books WHERE id = ?", (test_book,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            print(f"  ✓ Book add/retrieve working")
+            tests_passed += 1
+            # Clean up
+            delete_book(test_book)
+        else:
+            print(f"  ✗ Book add/retrieve failed")
+            tests_failed += 1
+    except Exception as e:
+        print(f"  ✗ Database operations failed: {e}")
+        tests_failed += 1
+    
+    # Summary
+    print("\n" + "=" * 60)
+    print(f"DIAGNOSTICS COMPLETE")
+    print(f"  Passed: {tests_passed}")
+    print(f"  Failed: {tests_failed}")
+    if tests_failed == 0:
+        print("  ✓ ALL TESTS PASSED")
+    else:
+        print(f"  ✗ {tests_failed} TEST(S) FAILED")
+    print("=" * 60 + "\n")
+
 if __name__ == "__main__":
     create_database()
