@@ -37,7 +37,7 @@
 		A1000001000000000000010C /* BorrowersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowersView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010D /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MediaInventory.entitlements; sourceTree = "<group>"; };
+		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
 		A10000010000000000000110 /* MediaInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -215,7 +215,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = MediaInventory/MediaInventory.entitlements;
+				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -237,7 +237,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = MediaInventory/MediaInventory.entitlements;
+				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
