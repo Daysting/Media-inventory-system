@@ -442,6 +442,13 @@
                             <label>Cover Image</label>
                             <input type="file" id="bookImage" accept="image/*">
                         </div>
+                        <div class="form-row" style="align-items: end; gap: 0.75rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Cover Image URL (or fetched)</label>
+                                <input type="text" id="bookImageUrl" placeholder="Image URL from Google" />
+                            </div>
+                            <button type="button" onclick="searchImage('book')" class="btn-small">Search Cover Image</button>
+                        </div>
                         <div class="form-group">
                             <label>Description</label>
                             <textarea id="bookDescription"></textarea>
@@ -489,6 +496,13 @@
                         <div class="form-group">
                             <label>Cover Image</label>
                             <input type="file" id="gameImage" accept="image/*">
+                        </div>
+                        <div class="form-row" style="align-items: end; gap: 0.75rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Cover Image URL (or fetched)</label>
+                                <input type="text" id="gameImageUrl" placeholder="Image URL from Google" />
+                            </div>
+                            <button type="button" onclick="searchImage('game')" class="btn-small">Search Cover Image</button>
                         </div>
                         <button type="submit" class="btn-success">Add Game</button>
                     </form>
@@ -555,6 +569,13 @@
                         <div class="form-group">
                             <label>Cover Image</label>
                             <input type="file" id="movieImage" accept="image/*">
+                        </div>
+                        <div class="form-row" style="align-items: end; gap: 0.75rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Cover Image URL (or fetched)</label>
+                                <input type="text" id="movieImageUrl" placeholder="Image URL from Google" />
+                            </div>
+                            <button type="button" onclick="searchImage('movie')" class="btn-small">Search Cover Image</button>
                         </div>
                         <button type="submit" class="btn-success">Add Movie</button>
                     </form>
@@ -802,9 +823,49 @@
 
             const data = await response.json();
             if (data.success) {
-                return data.url;
+                return data.image_url;
             } else {
                 throw new Error(data.error || 'Image upload failed');
+            }
+        }
+
+        async function searchImage(mediaType) {
+            let title = '';
+            let extra = '';
+
+            if (mediaType === 'book') {
+                title = document.getElementById('bookTitle').value;
+                extra = document.getElementById('bookAuthor').value || '';
+            } else if (mediaType === 'game') {
+                title = document.getElementById('gameTitle').value;
+                extra = document.getElementById('gameSystem').value || '';
+            } else if (mediaType === 'movie') {
+                title = document.getElementById('movieTitle').value;
+                extra = document.getElementById('movieDirector').value || '';
+            }
+
+            if (!title.trim()) {
+                showAlert('Please provide a title first for image search.', 'error');
+                return;
+            }
+
+            const query = `${title}${extra ? ' ' + extra : ''}`;
+
+            try {
+                const response = await fetch('/api/search-image?query=' + encodeURIComponent(query));
+                const data = await response.json();
+                if (data.success) {
+                    const fieldId = `${mediaType}ImageUrl`;
+                    const input = document.getElementById(fieldId);
+                    if (input) {
+                        input.value = data.image_url;
+                    }
+                    showAlert('Image URL fetched successfully. You can save or upload', 'success');
+                } else {
+                    showAlert('Image search failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Image search failed: ' + error.message, 'error');
             }
         }
 
@@ -888,12 +949,15 @@
         async function addBook(event) {
             event.preventDefault();
             try {
-                let imageUrl = null;
-                try {
-                    imageUrl = await uploadImage('bookImage');
-                } catch (uploadError) {
-                    showAlert('Image upload failed: ' + uploadError.message, 'error');
-                    return;
+                let imageUrl = document.getElementById('bookImageUrl').value || null;
+                const fileInput = document.getElementById('bookImage');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    try {
+                        imageUrl = await uploadImage('bookImage');
+                    } catch (uploadError) {
+                        showAlert('Image upload failed: ' + uploadError.message, 'error');
+                        return;
+                    }
                 }
 
                 const response = await fetch('/api/books', {
@@ -1030,12 +1094,15 @@
         async function addGame(event) {
             event.preventDefault();
             try {
-                let imageUrl = null;
-                try {
-                    imageUrl = await uploadImage('gameImage');
-                } catch (uploadError) {
-                    showAlert('Image upload failed: ' + uploadError.message, 'error');
-                    return;
+                let imageUrl = document.getElementById('gameImageUrl').value || null;
+                const fileInput = document.getElementById('gameImage');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    try {
+                        imageUrl = await uploadImage('gameImage');
+                    } catch (uploadError) {
+                        showAlert('Image upload failed: ' + uploadError.message, 'error');
+                        return;
+                    }
                 }
 
                 const response = await fetch('/api/video_games', {
@@ -1124,12 +1191,15 @@
         async function addMovie(event) {
             event.preventDefault();
             try {
-                let imageUrl = null;
-                try {
-                    imageUrl = await uploadImage('movieImage');
-                } catch (uploadError) {
-                    showAlert('Image upload failed: ' + uploadError.message, 'error');
-                    return;
+                let imageUrl = document.getElementById('movieImageUrl').value || null;
+                const fileInput = document.getElementById('movieImage');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    try {
+                        imageUrl = await uploadImage('movieImage');
+                    } catch (uploadError) {
+                        showAlert('Image upload failed: ' + uploadError.message, 'error');
+                        return;
+                    }
                 }
 
                 const response = await fetch('/api/movies', {

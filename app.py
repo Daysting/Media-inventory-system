@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import system
 import os
 import uuid
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -363,6 +364,19 @@ def upload_media_image():
 
         # Return relative path for storage and display
         image_url = f"/static/uploads/{filename}"
+        return jsonify({'success': True, 'image_url': image_url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/search-image', methods=['GET'])
+def search_image():
+    query = request.args.get('query')
+    if not query:
+        return jsonify({'success': False, 'error': 'query parameter is required'}), 400
+
+    try:
+        image_url = system.search_google_image(query)
         return jsonify({'success': True, 'image_url': image_url})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

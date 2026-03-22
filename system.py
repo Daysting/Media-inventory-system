@@ -1,4 +1,14 @@
 import sqlite3
+import urllib.parse
+
+# Optional dependency used for web scraping Google Images when requested.
+try:
+    import requests
+    from bs4 import BeautifulSoup
+except ImportError:
+    requests = None
+    BeautifulSoup = None
+
 
 def create_database():
     # Connect to SQLite database (creates file if it doesn't exist)
@@ -99,6 +109,40 @@ def generate_media_id(category):
     Video Games: 319722XXXXXXXXX
     Movies: 319723XXXXXXXXX
     """
+
+
+def search_google_image(query):
+    """Search Google Images and provide the first image URL result."""
+    if requests is None or BeautifulSoup is None:
+        raise RuntimeError(
+            "requests and beautifulsoup4 are required for search_google_image. "
+            "Install with: pip install requests beautifulsoup4"
+        )
+
+    if not query or not query.strip():
+        raise ValueError('Query must be non-empty')
+
+    headers = {
+        'User-Agent': (
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+        )
+    }
+    query_encoded = urllib.parse.quote_plus(query)
+    url = f'https://www.google.com/search?tbm=isch&q={query_encoded}'
+
+    response = requests.get(url, headers=headers, timeout=15)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Prefer data-src if available, else src
+    for img in soup.find_all('img'):
+        src = img.get('data-src') or img.get('src')
+        if src and src.startswith('http'):
+            return src
+
+    raise RuntimeError('No image URL could be extracted from Google image search response.')
     prefixes = {
         'books': '319721',
         'video_games': '319722',
