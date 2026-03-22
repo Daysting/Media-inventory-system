@@ -23,6 +23,7 @@ def create_database():
             fiction_nonfiction TEXT,
             genre TEXT,
             description TEXT,
+            image_url TEXT,
             status TEXT DEFAULT 'owned'
         )
     ''')
@@ -35,6 +36,7 @@ def create_database():
             game_system TEXT,
             genre TEXT,
             year_released INTEGER,
+            image_url TEXT,
             status TEXT DEFAULT 'owned'
         )
     ''')
@@ -50,6 +52,7 @@ def create_database():
             studio TEXT,
             genre TEXT,
             format TEXT,
+            image_url TEXT,
             status TEXT DEFAULT 'owned'
         )
     ''')
@@ -139,7 +142,7 @@ def generate_media_id(category):
     conn.close()
     return new_id
 
-def add_book(title, author=None, year_published=None, publisher=None, fiction_nonfiction=None, genre=None, description=None, status='owned'):
+def add_book(title, author=None, year_published=None, publisher=None, fiction_nonfiction=None, genre=None, description=None, image_url=None, status='owned'):
     """Add a new book to the inventory."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -147,15 +150,15 @@ def add_book(title, author=None, year_published=None, publisher=None, fiction_no
     media_id = generate_media_id('books')
 
     cursor.execute('''
-        INSERT INTO books (id, title, author, year_published, publisher, fiction_nonfiction, genre, description, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (media_id, title, author, year_published, publisher, fiction_nonfiction, genre, description, status))
+        INSERT INTO books (id, title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (media_id, title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, status))
 
     conn.commit()
     conn.close()
     return media_id
 
-def add_video_game(title, game_system=None, genre=None, year_released=None, status='owned'):
+def add_video_game(title, game_system=None, genre=None, year_released=None, image_url=None, status='owned'):
     """Add a new video game to the inventory."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -163,15 +166,15 @@ def add_video_game(title, game_system=None, genre=None, year_released=None, stat
     media_id = generate_media_id('video_games')
 
     cursor.execute('''
-        INSERT INTO video_games (id, title, game_system, genre, year_released, status)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (media_id, title, game_system, genre, year_released, status))
+        INSERT INTO video_games (id, title, game_system, genre, year_released, image_url, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (media_id, title, game_system, genre, year_released, image_url, status))
 
     conn.commit()
     conn.close()
     return media_id
 
-def add_movie(title, director=None, cast=None, year_released=None, studio=None, genre=None, format=None, status='owned'):
+def add_movie(title, director=None, cast=None, year_released=None, studio=None, genre=None, format=None, image_url=None, status='owned'):
     """Add a new movie to the inventory."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -179,9 +182,9 @@ def add_movie(title, director=None, cast=None, year_released=None, studio=None, 
     media_id = generate_media_id('movies')
 
     cursor.execute('''
-        INSERT INTO movies (id, title, director, cast, year_released, studio, genre, format, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (media_id, title, director, cast, year_released, studio, genre, format, status))
+        INSERT INTO movies (id, title, director, cast, year_released, studio, genre, format, image_url, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (media_id, title, director, cast, year_released, studio, genre, format, image_url, status))
 
     conn.commit()
     conn.close()
@@ -434,7 +437,7 @@ def update_borrower(borrower_id, first_name=None, last_name=None, address=None, 
     print(f"Borrower {borrower_id} has been updated.")
     return True
 
-def update_book(book_id, title=None, author=None, year_published=None, publisher=None, fiction_nonfiction=None, genre=None, description=None):
+def update_book(book_id, title=None, author=None, year_published=None, publisher=None, fiction_nonfiction=None, genre=None, description=None, image_url=None):
     """Update book information."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -456,19 +459,20 @@ def update_book(book_id, title=None, author=None, year_published=None, publisher
     fiction_nonfiction = fiction_nonfiction if fiction_nonfiction is not None else book[5]
     genre = genre if genre is not None else book[6]
     description = description if description is not None else book[7]
+    image_url = image_url if image_url is not None else book[8]
 
     cursor.execute('''
         UPDATE books
-        SET title = ?, author = ?, year_published = ?, publisher = ?, fiction_nonfiction = ?, genre = ?, description = ?
+        SET title = ?, author = ?, year_published = ?, publisher = ?, fiction_nonfiction = ?, genre = ?, description = ?, image_url = ?
         WHERE id = ?
-    ''', (title, author, year_published, publisher, fiction_nonfiction, genre, description, book_id))
+    ''', (title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, book_id))
 
     conn.commit()
     conn.close()
     print(f"Book {book_id} has been updated.")
     return True
 
-def update_video_game(game_id, title=None, game_system=None, genre=None, year_released=None):
+def update_video_game(game_id, title=None, game_system=None, genre=None, year_released=None, image_url=None):
     """Update video game information."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -487,19 +491,20 @@ def update_video_game(game_id, title=None, game_system=None, genre=None, year_re
     game_system = game_system if game_system is not None else game[2]
     genre = genre if genre is not None else game[3]
     year_released = year_released if year_released is not None else game[4]
+    image_url = image_url if image_url is not None else game[5]
 
     cursor.execute('''
         UPDATE video_games
-        SET title = ?, game_system = ?, genre = ?, year_released = ?
+        SET title = ?, game_system = ?, genre = ?, year_released = ?, image_url = ?
         WHERE id = ?
-    ''', (title, game_system, genre, year_released, game_id))
+    ''', (title, game_system, genre, year_released, image_url, game_id))
 
     conn.commit()
     conn.close()
     print(f"Video game {game_id} has been updated.")
     return True
 
-def update_movie(movie_id, title=None, director=None, cast=None, year_released=None, studio=None, genre=None, format=None):
+def update_movie(movie_id, title=None, director=None, cast=None, year_released=None, studio=None, genre=None, format=None, image_url=None):
     """Update movie information."""
     conn = connect_to_database()
     cursor = conn.cursor()
@@ -521,12 +526,13 @@ def update_movie(movie_id, title=None, director=None, cast=None, year_released=N
     studio = studio if studio is not None else movie[5]
     genre = genre if genre is not None else movie[6]
     format = format if format is not None else movie[7]
+    image_url = image_url if image_url is not None else movie[8]
 
     cursor.execute('''
         UPDATE movies
-        SET title = ?, director = ?, cast = ?, year_released = ?, studio = ?, genre = ?, format = ?
+        SET title = ?, director = ?, cast = ?, year_released = ?, studio = ?, genre = ?, format = ?, image_url = ?
         WHERE id = ?
-    ''', (title, director, cast, year_released, studio, genre, format, movie_id))
+    ''', (title, director, cast, year_released, studio, genre, format, image_url, movie_id))
 
     conn.commit()
     conn.close()

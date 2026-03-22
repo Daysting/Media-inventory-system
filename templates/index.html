@@ -439,6 +439,10 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label>Cover Image</label>
+                            <input type="file" id="bookImage" accept="image/*">
+                        </div>
+                        <div class="form-group">
                             <label>Description</label>
                             <textarea id="bookDescription"></textarea>
                         </div>
@@ -481,6 +485,10 @@
                                 <label>Year Released</label>
                                 <input type="number" id="gameYear">
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cover Image</label>
+                            <input type="file" id="gameImage" accept="image/*">
                         </div>
                         <button type="submit" class="btn-success">Add Game</button>
                     </form>
@@ -543,6 +551,10 @@
                                     <option value="VHS">VHS</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cover Image</label>
+                            <input type="file" id="movieImage" accept="image/*">
                         </div>
                         <button type="submit" class="btn-success">Add Movie</button>
                     </form>
@@ -710,6 +722,10 @@
                     <input type="text" id="editBookGenre">
                 </div>
                 <div class="form-group">
+                    <label>Cover Image URL</label>
+                    <input type="text" id="editBookImageUrl" placeholder="Paste image URL or upload via add book form">
+                </div>
+                <div class="form-group">
                     <label>Description</label>
                     <textarea id="editBookDescription"></textarea>
                 </div>
@@ -772,6 +788,26 @@
             }, 4000);
         }
 
+        async function uploadImage(fileInputId) {
+            const input = document.getElementById(fileInputId);
+            if (!input || !input.files || input.files.length === 0) return null;
+
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return data.url;
+            } else {
+                throw new Error(data.error || 'Image upload failed');
+            }
+        }
+
         // Dashboard
         async function loadDashboard() {
             try {
@@ -826,10 +862,11 @@
             if (booksToRender.length === 0) {
                 html = '<div class="empty-state"><p>No books found. Add your first book to get started!</p></div>';
             } else {
-                html = '<table><thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Year</th><th>Genre</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
+                html = '<table><thead><tr><th>ID</th><th>Cover</th><th>Title</th><th>Author</th><th>Year</th><th>Genre</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
                 booksToRender.forEach(book => {
                     html += `<tr>
                         <td>${book.id}</td>
+                        <td>${book.image_url ? `<img src="${book.image_url}" alt="cover" style="width:50px;height:auto;border-radius:4px;">` : '-'} </td>
                         <td>${book.title}</td>
                         <td>${book.author || '-'}</td>
                         <td>${book.year_published || '-'}</td>
@@ -851,6 +888,14 @@
         async function addBook(event) {
             event.preventDefault();
             try {
+                let imageUrl = null;
+                try {
+                    imageUrl = await uploadImage('bookImage');
+                } catch (uploadError) {
+                    showAlert('Image upload failed: ' + uploadError.message, 'error');
+                    return;
+                }
+
                 const response = await fetch('/api/books', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -861,7 +906,8 @@
                         publisher: document.getElementById('bookPublisher').value || null,
                         fiction_nonfiction: document.getElementById('bookType').value || null,
                         genre: document.getElementById('bookGenre').value || null,
-                        description: document.getElementById('bookDescription').value || null
+                        description: document.getElementById('bookDescription').value || null,
+                        image_url: imageUrl
                     })
                 });
                 const data = await response.json();
@@ -887,6 +933,7 @@
                 document.getElementById('editBookType').value = book.fiction_nonfiction || '';
                 document.getElementById('editBookGenre').value = book.genre || '';
                 document.getElementById('editBookDescription').value = book.description || '';
+                document.getElementById('editBookImageUrl').value = book.image_url || '';
                 editingBookId = bookId;
                 document.getElementById('editBookModal').classList.add('active');
             }
@@ -905,7 +952,8 @@
                         publisher: document.getElementById('editBookPublisher').value || null,
                         fiction_nonfiction: document.getElementById('editBookType').value || null,
                         genre: document.getElementById('editBookGenre').value || null,
-                        description: document.getElementById('editBookDescription').value || null
+                        description: document.getElementById('editBookDescription').value || null,
+                        image_url: document.getElementById('editBookImageUrl').value || null
                     })
                 });
                 const data = await response.json();
@@ -957,10 +1005,11 @@
             if (gamesToRender.length === 0) {
                 html = '<div class="empty-state"><p>No video games found. Add your first game to get started!</p></div>';
             } else {
-                html = '<table><thead><tr><th>ID</th><th>Title</th><th>System</th><th>Genre</th><th>Year</th><th>Actions</th></tr></thead><tbody>';
+                html = '<table><thead><tr><th>ID</th><th>Cover</th><th>Title</th><th>System</th><th>Genre</th><th>Year</th><th>Actions</th></tr></thead><tbody>';
                 gamesToRender.forEach(game => {
                     html += `<tr>
                         <td>${game.id}</td>
+                        <td>${game.image_url ? `<img src="${game.image_url}" alt="cover" style="width:50px;height:auto;border-radius:4px;">` : '-'} </td>
                         <td>${game.title}</td>
                         <td>${game.game_system || '-'}</td>
                         <td>${game.genre || '-'}</td>
@@ -981,6 +1030,14 @@
         async function addGame(event) {
             event.preventDefault();
             try {
+                let imageUrl = null;
+                try {
+                    imageUrl = await uploadImage('gameImage');
+                } catch (uploadError) {
+                    showAlert('Image upload failed: ' + uploadError.message, 'error');
+                    return;
+                }
+
                 const response = await fetch('/api/video_games', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -988,7 +1045,8 @@
                         title: document.getElementById('gameTitle').value,
                         game_system: document.getElementById('gameSystem').value || null,
                         genre: document.getElementById('gameGenre').value || null,
-                        year_released: document.getElementById('gameYear').value || null
+                        year_released: document.getElementById('gameYear').value || null,
+                        image_url: imageUrl
                     })
                 });
                 const data = await response.json();
@@ -1040,10 +1098,11 @@
             if (moviesToRender.length === 0) {
                 html = '<div class="empty-state"><p>No movies found. Add your first movie to get started!</p></div>';
             } else {
-                html = '<table><thead><tr><th>ID</th><th>Title</th><th>Director</th><th>Format</th><th>Year</th><th>Genre</th><th>Actions</th></tr></thead><tbody>';
+                html = '<table><thead><tr><th>ID</th><th>Cover</th><th>Title</th><th>Director</th><th>Format</th><th>Year</th><th>Genre</th><th>Actions</th></tr></thead><tbody>';
                 moviesToRender.forEach(movie => {
                     html += `<tr>
                         <td>${movie.id}</td>
+                        <td>${movie.image_url ? `<img src="${movie.image_url}" alt="cover" style="width:50px;height:auto;border-radius:4px;">` : '-'} </td>
                         <td>${movie.title}</td>
                         <td>${movie.director || '-'}</td>
                         <td>${movie.format || '-'}</td>
@@ -1065,6 +1124,14 @@
         async function addMovie(event) {
             event.preventDefault();
             try {
+                let imageUrl = null;
+                try {
+                    imageUrl = await uploadImage('movieImage');
+                } catch (uploadError) {
+                    showAlert('Image upload failed: ' + uploadError.message, 'error');
+                    return;
+                }
+
                 const response = await fetch('/api/movies', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1075,7 +1142,8 @@
                         year_released: document.getElementById('movieYear').value || null,
                         studio: document.getElementById('movieStudio').value || null,
                         genre: document.getElementById('movieGenre').value || null,
-                        format: document.getElementById('movieFormat').value || null
+                        format: document.getElementById('movieFormat').value || null,
+                        image_url: imageUrl
                     })
                 });
                 const data = await response.json();

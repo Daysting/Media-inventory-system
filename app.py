@@ -1,8 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import system
-import traceback
+import os
+import uuid
 
 app = Flask(__name__)
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/')
 def index():
@@ -30,7 +35,8 @@ def get_books():
                     'fiction_nonfiction': book[5],
                     'genre': book[6],
                     'description': book[7],
-                    'status': book[8]
+                    'image_url': book[8],
+                    'status': book[9]
                 }
                 for book in books
             ]
@@ -49,7 +55,8 @@ def add_book():
             data.get('publisher'),
             data.get('fiction_nonfiction'),
             data.get('genre'),
-            data.get('description')
+            data.get('description'),
+            data.get('image_url')
         )
         return jsonify({'success': True, 'book_id': book_id})
     except Exception as e:
@@ -75,7 +82,8 @@ def update_book(book_id):
             data.get('publisher'),
             data.get('fiction_nonfiction'),
             data.get('genre'),
-            data.get('description')
+            data.get('description'),
+            data.get('image_url')
         )
         return jsonify({'success': True})
     except Exception as e:
@@ -100,7 +108,8 @@ def get_video_games():
                     'game_system': game[2],
                     'genre': game[3],
                     'year_released': game[4],
-                    'status': game[5]
+                    'image_url': game[5],
+                    'status': game[6]
                 }
                 for game in games
             ]
@@ -116,7 +125,8 @@ def add_video_game():
             data.get('title'),
             data.get('game_system'),
             data.get('genre'),
-            data.get('year_released')
+            data.get('year_released'),
+            data.get('image_url')
         )
         return jsonify({'success': True, 'game_id': game_id})
     except Exception as e:
@@ -139,7 +149,8 @@ def update_video_game(game_id):
             data.get('title'),
             data.get('game_system'),
             data.get('genre'),
-            data.get('year_released')
+            data.get('year_released'),
+            data.get('image_url')
         )
         return jsonify({'success': True})
     except Exception as e:
@@ -167,7 +178,8 @@ def get_movies():
                     'studio': movie[5],
                     'genre': movie[6],
                     'format': movie[7],
-                    'status': movie[8]
+                    'image_url': movie[8],
+                    'status': movie[9]
                 }
                 for movie in movies
             ]
@@ -186,7 +198,8 @@ def add_movie():
             data.get('year_released'),
             data.get('studio'),
             data.get('genre'),
-            data.get('format')
+            data.get('format'),
+            data.get('image_url')
         )
         return jsonify({'success': True, 'movie_id': movie_id})
     except Exception as e:
@@ -212,7 +225,8 @@ def update_movie(movie_id):
             data.get('year_released'),
             data.get('studio'),
             data.get('genre'),
-            data.get('format')
+            data.get('format'),
+            data.get('image_url')
         )
         return jsonify({'success': True})
     except Exception as e:
@@ -329,6 +343,31 @@ def return_media():
         return jsonify({'success': False, 'error': str(e)})
 
 # Diagnostics endpoints
+@app.route('/api/upload', methods=['POST'])
+def upload_media_image():
+    try:
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image file provided'}), 400
+
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No selected file'}), 400
+
+        extension = os.path.splitext(file.filename)[1].lower()
+        if extension not in ['.jpg', '.jpeg', '.png', '.gif']:
+            return jsonify({'success': False, 'error': 'Unsupported image type'}), 400
+
+        filename = f"{uuid.uuid4().hex}{extension}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        # Return relative path for storage and display
+        image_url = f"/static/uploads/{filename}"
+        return jsonify({'success': True, 'image_url': image_url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/diagnostics', methods=['GET'])
 def diagnostics():
     try:
