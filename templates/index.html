@@ -386,6 +386,7 @@
             <button class="tab-button" data-tab="checkout">Checkout/Return</button>
             <button class="tab-button" data-tab="reports">Reports</button>
             <button class="tab-button" data-tab="tools">Tools & Diagnostics</button>
+            <button class="tab-button" data-tab="barcodes">Barcodes</button>
         </div>
 
         <!-- Alert Messages -->
@@ -704,6 +705,41 @@
             </div>
 
             <div id="toolsOutput" style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; display: none;"></div>
+        </div>
+
+        <!-- Barcodes Tab -->
+        <div id="barcodes" class="tab-content">
+            <h2>Barcode Generation</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <button onclick="generateMediaBarcodes()" class="btn-success" style="padding: 1.5rem; font-size: 1.1rem; height: auto;">
+                    📚 Generate Media Barcodes
+                </button>
+                <button onclick="generateBorrowerBarcodes()" class="btn-success" style="padding: 1.5rem; font-size: 1.1rem; height: auto;">
+                    👤 Generate Borrower Barcodes
+                </button>
+                <button onclick="printAllBarcodes()" class="btn-primary" style="padding: 1.5rem; font-size: 1.1rem; height: auto;">
+                    🖨️ Print All Barcodes
+                </button>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label for="barcodeType">Barcode Type:</label>
+                <select id="barcodeType" style="margin-left: 1rem; padding: 0.5rem;">
+                    <option value="code128">Code 128</option>
+                    <option value="code39">Code 39</option>
+                    <option value="ean13">EAN-13</option>
+                    <option value="upca">UPC-A</option>
+                </select>
+                
+                <label for="singleBarcodeId" style="margin-left: 2rem;">Single ID:</label>
+                <input type="text" id="singleBarcodeId" placeholder="Enter ID number" style="margin-left: 0.5rem; padding: 0.5rem; width: 200px;">
+                <button onclick="generateSingleBarcode()" class="btn-secondary" style="margin-left: 1rem;">Generate Single Barcode</button>
+            </div>
+
+            <div id="barcodeOutput" style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 4px; display: none;">
+                <div id="barcodeContainer" style="display: flex; flex-wrap: wrap; gap: 1rem;"></div>
+            </div>
         </div>
 
         <!-- Reports Tab -->
@@ -1832,6 +1868,132 @@
                 e.target.classList.remove('active');
             }
         });
+
+        // Barcode functions
+        async function generateSingleBarcode() {
+            const id = document.getElementById('singleBarcodeId').value.trim();
+            const type = document.getElementById('barcodeType').value;
+            
+            if (!id) {
+                alert('Please enter an ID number');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/barcodes/generate?id=${encodeURIComponent(id)}&type=${type}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayBarcode([data]);
+                } else {
+                    alert('Error generating barcode: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function generateMediaBarcodes() {
+            const type = prompt('Enter media type (books, video_games, movies) or leave empty for all:');
+            
+            try {
+                const url = type ? `/api/barcodes/media?type=${encodeURIComponent(type)}` : '/api/barcodes/media';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayBarcode(data.barcodes);
+                } else {
+                    alert('Error generating barcodes: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function generateBorrowerBarcodes() {
+            try {
+                const response = await fetch('/api/barcodes/borrowers');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayBarcode(data.barcodes);
+                } else {
+                    alert('Error generating barcodes: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function displayBarcode(barcodes) {
+            const container = document.getElementById('barcodeContainer');
+            const output = document.getElementById('barcodeOutput');
+            
+            container.innerHTML = '';
+            
+            barcodes.forEach(barcode => {
+                const barcodeDiv = document.createElement('div');
+                barcodeDiv.style.cssText = `
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    padding: 1rem;
+                    background: white;
+                    text-align: center;
+                    min-width: 300px;
+                `;
+                
+                barcodeDiv.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 0.5rem;">${barcode.id}</div>
+                    <img src="${barcode.barcode_url}" alt="Barcode for ${barcode.id}" style="max-width: 100%; height: auto;">
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">${barcode.type}</div>
+                `;
+                
+                container.appendChild(barcodeDiv);
+            });
+            
+            output.style.display = 'block';
+        }
+
+        function printAllBarcodes() {
+            const container = document.getElementById('barcodeContainer');
+            if (!container.children.length) {
+                alert('No barcodes to print. Generate some barcodes first.');
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Media Inventory Barcodes</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .barcode-item { 
+                            display: inline-block; 
+                            border: 1px solid #ddd; 
+                            margin: 10px; 
+                            padding: 10px; 
+                            text-align: center;
+                            page-break-inside: avoid;
+                        }
+                        .barcode-item img { max-width: 250px; height: auto; }
+                        @media print {
+                            .barcode-item { margin: 5px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Media Inventory Barcodes</h1>
+                    ${Array.from(container.children).map(child => 
+                        `<div class="barcode-item">${child.innerHTML}</div>`
+                    ).join('')}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
     </script>
 </body>
 </html>

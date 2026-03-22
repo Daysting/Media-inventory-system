@@ -9,6 +9,18 @@ except ImportError:
     requests = None
     BeautifulSoup = None
 
+# Optional dependencies for barcode generation
+try:
+    import barcode
+    from barcode.writer import ImageWriter
+    from io import BytesIO
+    import base64
+except ImportError:
+    barcode = None
+    ImageWriter = None
+    BytesIO = None
+    base64 = None
+
 
 def create_database():
     # Connect to SQLite database (creates file if it doesn't exist)
@@ -143,6 +155,125 @@ def search_google_image(query):
             return src
 
     raise RuntimeError('No image URL could be extracted from Google image search response.')
+
+
+def generate_barcode(id_number, barcode_type='code128'):
+    """Generate a barcode image for the given ID number.
+
+    Args:
+        id_number (str): The ID to encode in the barcode
+        barcode_type (str): Type of barcode ('code128', 'ean13', 'code39', 'qr')
+
+    Returns:
+        dict: Contains 'success', 'barcode_data' (base64), 'format', and 'id'
+    """
+    if barcode is None or ImageWriter is None or BytesIO is None or base64 is None:
+        raise RuntimeError(
+            "Barcode generation requires python-barcode and Pillow. "
+            "Install with: pip install python-barcode pillow"
+        )
+
+    if not id_number or not id_number.strip():
+        raise ValueError('ID number cannot be empty')
+
+    try:
+        # Create barcode
+        if barcode_type.lower() == 'code128':
+            barcode_class = barcode.get_barcode_class('code128')
+        elif barcode_type.lower() == 'ean13':
+            barcode_class = barcode.get_barcode_class('ean13')
+        elif barcode_type.lower() == 'code39':
+            barcode_class = barcode.get_barcode_class('code39')
+        elif barcode_type.lower() == 'qr':
+            # For QR codes, we'd need qrcode library, but let's stick with linear barcodes for now
+            raise ValueError('QR codes not supported. Use code128, ean13, or code39.')
+        else:
+            raise ValueError('Unsupported barcode type. Use code128, ean13, or code39.')
+
+        # Generate barcode
+        barcode_obj = barcode_class(id_number)
+
+        # Create image in memory
+        buffer = BytesIO()
+        barcode_obj.write(buffer, options={'module_width': 0.2, 'module_height': 15, 'quiet_zone': 1, 'font_size': 10, 'text_distance': 5})
+
+        # Convert to base64 for web display
+        barcode_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+        return {
+            'success': True,
+            'barcode_data': f'data:image/png;base64,{barcode_data}',
+            'format': barcode_type,
+            'id': id_number
+        }
+
+    except Exception as e:
+        raise RuntimeError(f'Failed to generate barcode: {str(e)}')
+
+
+def generate_media_barcodes(media_type=None):
+    """Generate barcodes for all media items of specified type, or all types.
+
+    Args:
+        media_type (str, optional): 'books', 'video_games', 'movies', or None for all
+
+    Returns:
+        list: List of barcode data dictionaries
+    """
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    barcodes = []
+
+    media_tables = {
+        'books': 'books',
+        'video_games': 'video_games',
+        'movies': 'movies'
+    }
+
+    tables_to_process = [media_tables[media_type]] if media_type else list(media_tables.values())
+
+    for table in tables_to_process:
+        cursor.execute(f'SELECT id FROM {table} ORDER BY id')
+        media_ids = cursor.fetchall()
+
+        for (media_id,) in media_ids:
+            try:
+                barcode_data = generate_barcode(media_id, 'code128')
+                barcode_data['media_type'] = table[:-1] if table.endswith('s') else table  # Remove 's' from table name
+                barcodes.append(barcode_data)
+            except Exception as e:
+                # Skip items that fail barcode generation
+                continue
+
+    conn.close()
+    return barcodes
+
+
+def generate_borrower_barcodes():
+    """Generate barcodes for all borrowers.
+
+    Returns:
+        list: List of barcode data dictionaries for borrowers
+    """
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT id, first_name, last_name FROM borrowers ORDER BY last_name, first_name')
+    borrowers = cursor.fetchall()
+
+    barcodes = []
+    for borrower_id, first_name, last_name in borrowers:
+        try:
+            barcode_data = generate_barcode(borrower_id, 'code128')
+            barcode_data['borrower_name'] = f"{first_name} {last_name}"
+            barcodes.append(barcode_data)
+        except Exception as e:
+            # Skip borrowers that fail barcode generation
+            continue
+
+    conn.close()
+    return barcodes
 
 
 # Reporting Functions

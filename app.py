@@ -430,6 +430,42 @@ def get_overdue_items_report():
         return jsonify({'success': False, 'error': str(e)})
 
 
+# Barcode generation endpoints
+@app.route('/api/barcodes/generate', methods=['GET'])
+def generate_barcode():
+    id_number = request.args.get('id')
+    barcode_type = request.args.get('type', 'code128')
+
+    if not id_number:
+        return jsonify({'success': False, 'error': 'id parameter is required'}), 400
+
+    try:
+        barcode_data = system.generate_barcode(id_number, barcode_type)
+        return jsonify(barcode_data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/barcodes/media', methods=['GET'])
+def get_media_barcodes():
+    media_type = request.args.get('type')  # optional: books, video_games, movies
+
+    try:
+        barcodes = system.generate_media_barcodes(media_type)
+        return jsonify({'success': True, 'barcodes': barcodes})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/barcodes/borrowers', methods=['GET'])
+def get_borrower_barcodes():
+    try:
+        barcodes = system.generate_borrower_barcodes()
+        return jsonify({'success': True, 'barcodes': barcodes})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/diagnostics', methods=['GET'])
 def diagnostics():
     try:
