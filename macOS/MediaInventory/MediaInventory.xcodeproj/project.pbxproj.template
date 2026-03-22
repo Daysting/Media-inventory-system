@@ -1,0 +1,31 @@
+// This is a template. Use Xcode to create the actual project, or follow the structure below.
+// Project structure for macOS/MediaInventory/
+
+Project Structure:
+- MediaInventory/
+  - MediaInventory/
+    - App/
+      - MediaInventoryApp.swift
+      - AppDelegate.swift
+    - Models/
+      - Book.swift
+      - Game.swift
+      - Movie.swift
+      - Borrower.swift
+    - Views/
+      - ContentView.swift
+      - DashboardView.swift
+      - BooksView.swift
+      - GamesView.swift
+      - MoviesView.swift
+      - BorrowersView.swift
+      - CheckoutView.swift
+    - Services/
+      - APIClient.swift
+      - NotificationManager.swift
+      - SearchIndexer.swift
+    - Resources/
+      - Assets.xcassets
+      - Localizable.strings
+    - Info.plist
+    - MediaInventory.entitlements
