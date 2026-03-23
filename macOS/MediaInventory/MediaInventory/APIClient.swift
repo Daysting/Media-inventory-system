@@ -55,7 +55,7 @@ class APIClient: ObservableObject {
             var rows: [[String: Any]] = []
             try self.withDatabase { db in
                 let sql = """
-                SELECT id, title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, status
+                SELECT id, title, author, year_published, cost, publisher, fiction_nonfiction, genre, description, image_url, status
                 FROM books
                 ORDER BY title
                 """
@@ -69,12 +69,13 @@ class APIClient: ObservableObject {
                         "title": self.columnText(stmt, 1) ?? "Untitled",
                         "author": self.columnText(stmt, 2) as Any,
                         "year_published": self.columnInt(stmt, 3) as Any,
-                        "publisher": self.columnText(stmt, 4) as Any,
-                        "fiction_nonfiction": self.columnText(stmt, 5) as Any,
-                        "genre": self.columnText(stmt, 6) as Any,
-                        "description": self.columnText(stmt, 7) as Any,
-                        "image_url": self.columnText(stmt, 8) as Any,
-                        "status": self.columnText(stmt, 9) ?? "owned"
+                        "cost": self.columnDouble(stmt, 4) as Any,
+                        "publisher": self.columnText(stmt, 5) as Any,
+                        "fiction_nonfiction": self.columnText(stmt, 6) as Any,
+                        "genre": self.columnText(stmt, 7) as Any,
+                        "description": self.columnText(stmt, 8) as Any,
+                        "image_url": self.columnText(stmt, 9) as Any,
+                        "status": self.columnText(stmt, 10) ?? "owned"
                     ])
                 }
             }
@@ -92,14 +93,14 @@ class APIClient: ObservableObject {
     }
 
     func addBook(title: String, author: String?, yearPublished: Int?, publisher: String?,
-                 fictionNonfiction: String?, genre: String?, description: String?, imageUrl: String?) {
+                 fictionNonfiction: String?, genre: String?, description: String?, imageUrl: String?, cost: Double?) {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319721", digits: 8, table: "books", db: db)
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "books", mediaID: id)
                 let sql = """
-                INSERT INTO books (id, title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'owned')
+                INSERT INTO books (id, title, author, year_published, cost, publisher, fiction_nonfiction, genre, description, image_url, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'owned')
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
@@ -108,11 +109,12 @@ class APIClient: ObservableObject {
                 self.bindText(stmt, 2, title)
                 self.bindOptionalText(stmt, 3, author)
                 self.bindOptionalInt(stmt, 4, yearPublished)
-                self.bindOptionalText(stmt, 5, publisher)
-                self.bindOptionalText(stmt, 6, fictionNonfiction)
-                self.bindOptionalText(stmt, 7, genre)
-                self.bindOptionalText(stmt, 8, description)
-                self.bindOptionalText(stmt, 9, cachedImageUrl)
+                self.bindOptionalDouble(stmt, 5, cost)
+                self.bindOptionalText(stmt, 6, publisher)
+                self.bindOptionalText(stmt, 7, fictionNonfiction)
+                self.bindOptionalText(stmt, 8, genre)
+                self.bindOptionalText(stmt, 9, description)
+                self.bindOptionalText(stmt, 10, cachedImageUrl)
                 try self.require(sqlite3_step(stmt) == SQLITE_DONE, db: db)
             }
             DispatchQueue.main.async { self.fetchBooks() }
@@ -139,25 +141,26 @@ class APIClient: ObservableObject {
 
     func updateBook(id: String, title: String, author: String?, yearPublished: Int?,
                     publisher: String?, fictionNonfiction: String?, genre: String?,
-                    description: String?, imageUrl: String?) {
+                    description: String?, imageUrl: String?, cost: Double?) {
         runAsync {
             try self.withDatabase { db in
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "books", mediaID: id)
                 let sql = """
                 UPDATE books
-                SET title = ?, author = ?, year_published = ?, publisher = ?, fiction_nonfiction = ?, genre = ?, description = ?, image_url = ?
+                SET title = ?, author = ?, year_published = ?, cost = ?, publisher = ?, fiction_nonfiction = ?, genre = ?, description = ?, image_url = ?
                 WHERE id = ?
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
                     self.bindText(stmt, 1, title)
                     self.bindOptionalText(stmt, 2, author)
                     self.bindOptionalInt(stmt, 3, yearPublished)
-                    self.bindOptionalText(stmt, 4, publisher)
-                    self.bindOptionalText(stmt, 5, fictionNonfiction)
-                    self.bindOptionalText(stmt, 6, genre)
-                    self.bindOptionalText(stmt, 7, description)
-                    self.bindOptionalText(stmt, 8, cachedImageUrl)
-                    self.bindText(stmt, 9, id)
+                    self.bindOptionalDouble(stmt, 4, cost)
+                    self.bindOptionalText(stmt, 5, publisher)
+                    self.bindOptionalText(stmt, 6, fictionNonfiction)
+                    self.bindOptionalText(stmt, 7, genre)
+                    self.bindOptionalText(stmt, 8, description)
+                    self.bindOptionalText(stmt, 9, cachedImageUrl)
+                    self.bindText(stmt, 10, id)
                 })
             }
             DispatchQueue.main.async { self.fetchBooks() }
@@ -173,7 +176,7 @@ class APIClient: ObservableObject {
             var rows: [[String: Any]] = []
             try self.withDatabase { db in
                 let sql = """
-                SELECT id, title, game_system, genre, year_released, image_url, status
+                SELECT id, title, game_system, genre, year_released, cost, image_url, status
                 FROM video_games
                 ORDER BY title
                 """
@@ -189,11 +192,12 @@ class APIClient: ObservableObject {
                         "developer": gameSystem as Any,
                         "platform": gameSystem as Any,
                         "year_released": self.columnInt(stmt, 4) as Any,
+                        "cost": self.columnDouble(stmt, 5) as Any,
                         "genre": self.columnText(stmt, 3) as Any,
                         "rating": NSNull(),
                         "description": NSNull(),
-                        "image_url": self.columnText(stmt, 5) as Any,
-                        "status": self.columnText(stmt, 6) ?? "owned"
+                        "image_url": self.columnText(stmt, 6) as Any,
+                        "status": self.columnText(stmt, 7) ?? "owned"
                     ])
                 }
             }
@@ -211,15 +215,15 @@ class APIClient: ObservableObject {
     }
 
     func addGame(title: String, developer: String?, platform: String?, yearReleased: Int?,
-                 genre: String?, rating: String?, imageUrl: String?) {
+                 genre: String?, rating: String?, imageUrl: String?, cost: Double?) {
         let gameSystem = platform ?? developer
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319722", digits: 8, table: "video_games", db: db)
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "video_games", mediaID: id)
                 let sql = """
-                INSERT INTO video_games (id, title, game_system, genre, year_released, image_url, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'owned')
+                INSERT INTO video_games (id, title, game_system, genre, year_released, cost, image_url, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'owned')
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
                     self.bindText(stmt, 1, id)
@@ -227,7 +231,8 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 3, gameSystem)
                     self.bindOptionalText(stmt, 4, genre)
                     self.bindOptionalInt(stmt, 5, yearReleased)
-                    self.bindOptionalText(stmt, 6, cachedImageUrl)
+                    self.bindOptionalDouble(stmt, 6, cost)
+                    self.bindOptionalText(stmt, 7, cachedImageUrl)
                 })
             }
             DispatchQueue.main.async { self.fetchGames() }
@@ -253,13 +258,13 @@ class APIClient: ObservableObject {
     }
 
     func updateGame(id: String, title: String, platform: String?, genre: String?,
-                    yearReleased: Int?, imageUrl: String?) {
+                    yearReleased: Int?, imageUrl: String?, cost: Double?) {
         runAsync {
             try self.withDatabase { db in
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "video_games", mediaID: id)
                 let sql = """
                 UPDATE video_games
-                SET title = ?, game_system = ?, genre = ?, year_released = ?, image_url = ?
+                SET title = ?, game_system = ?, genre = ?, year_released = ?, cost = ?, image_url = ?
                 WHERE id = ?
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
@@ -267,8 +272,9 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 2, platform)
                     self.bindOptionalText(stmt, 3, genre)
                     self.bindOptionalInt(stmt, 4, yearReleased)
-                    self.bindOptionalText(stmt, 5, cachedImageUrl)
-                    self.bindText(stmt, 6, id)
+                    self.bindOptionalDouble(stmt, 5, cost)
+                    self.bindOptionalText(stmt, 6, cachedImageUrl)
+                    self.bindText(stmt, 7, id)
                 })
             }
             DispatchQueue.main.async { self.fetchGames() }
@@ -284,7 +290,7 @@ class APIClient: ObservableObject {
             var results: [Movie] = []
             try self.withDatabase { db in
                 let sql = """
-                SELECT id, title, director, "cast", year_released, studio, genre, format, image_url, status
+                SELECT id, title, director, "cast", year_released, cost, studio, genre, format, image_url, status
                 FROM movies
                 ORDER BY title
                 """
@@ -300,12 +306,13 @@ class APIClient: ObservableObject {
                             director: self.columnText(stmt, 2),
                             cast: self.columnText(stmt, 3),
                             yearReleased: self.columnInt(stmt, 4),
-                            studio: self.columnText(stmt, 5),
-                            genre: self.columnText(stmt, 6),
-                            rating: self.columnText(stmt, 7),
+                            cost: self.columnDouble(stmt, 5),
+                            studio: self.columnText(stmt, 6),
+                            genre: self.columnText(stmt, 7),
+                            rating: self.columnText(stmt, 8),
                             runtimeMinutes: nil,
-                            imageUrl: self.columnText(stmt, 8),
-                            status: self.columnText(stmt, 9) ?? "owned"
+                            imageUrl: self.columnText(stmt, 9),
+                            status: self.columnText(stmt, 10) ?? "owned"
                         )
                     )
                 }
@@ -322,23 +329,24 @@ class APIClient: ObservableObject {
     }
 
     func addMovie(title: String, director: String?, yearReleased: Int?, genre: String?,
-                  rating: String?, runtimeMinutes: Int?, imageUrl: String?) {
+                  rating: String?, runtimeMinutes: Int?, imageUrl: String?, cost: Double?) {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319723", digits: 8, table: "movies", db: db)
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "movies", mediaID: id)
                 let sql = """
-                INSERT INTO movies (id, title, director, "cast", year_released, studio, genre, format, image_url, status)
-                VALUES (?, ?, ?, NULL, ?, NULL, ?, ?, ?, 'owned')
+                INSERT INTO movies (id, title, director, "cast", year_released, cost, studio, genre, format, image_url, status)
+                VALUES (?, ?, ?, NULL, ?, ?, NULL, ?, ?, ?, 'owned')
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
                     self.bindText(stmt, 1, id)
                     self.bindText(stmt, 2, title)
                     self.bindOptionalText(stmt, 3, director)
                     self.bindOptionalInt(stmt, 4, yearReleased)
-                    self.bindOptionalText(stmt, 5, genre)
-                    self.bindOptionalText(stmt, 6, rating)
-                    self.bindOptionalText(stmt, 7, cachedImageUrl)
+                    self.bindOptionalDouble(stmt, 5, cost)
+                    self.bindOptionalText(stmt, 6, genre)
+                    self.bindOptionalText(stmt, 7, rating)
+                    self.bindOptionalText(stmt, 8, cachedImageUrl)
                 })
             }
             DispatchQueue.main.async { self.fetchMovies() }
@@ -365,13 +373,13 @@ class APIClient: ObservableObject {
 
     func updateMovie(id: String, title: String, director: String?, cast: String?,
                      yearReleased: Int?, studio: String?, genre: String?,
-                     rating: String?, imageUrl: String?) {
+                     rating: String?, imageUrl: String?, cost: Double?) {
         runAsync {
             try self.withDatabase { db in
                 let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "movies", mediaID: id)
                 let sql = """
                 UPDATE movies
-                SET title = ?, director = ?, "cast" = ?, year_released = ?, studio = ?, genre = ?, format = ?, image_url = ?
+                SET title = ?, director = ?, "cast" = ?, year_released = ?, cost = ?, studio = ?, genre = ?, format = ?, image_url = ?
                 WHERE id = ?
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
@@ -379,11 +387,12 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 2, director)
                     self.bindOptionalText(stmt, 3, cast)
                     self.bindOptionalInt(stmt, 4, yearReleased)
-                    self.bindOptionalText(stmt, 5, studio)
-                    self.bindOptionalText(stmt, 6, genre)
-                    self.bindOptionalText(stmt, 7, rating)
-                    self.bindOptionalText(stmt, 8, cachedImageUrl)
-                    self.bindText(stmt, 9, id)
+                    self.bindOptionalDouble(stmt, 5, cost)
+                    self.bindOptionalText(stmt, 6, studio)
+                    self.bindOptionalText(stmt, 7, genre)
+                    self.bindOptionalText(stmt, 8, rating)
+                    self.bindOptionalText(stmt, 9, cachedImageUrl)
+                    self.bindText(stmt, 10, id)
                 })
             }
             DispatchQueue.main.async { self.fetchMovies() }
@@ -921,6 +930,11 @@ class APIClient: ObservableObject {
         return Int(sqlite3_column_int(stmt, index))
     }
 
+    private func columnDouble(_ stmt: OpaquePointer?, _ index: Int32) -> Double? {
+        guard sqlite3_column_type(stmt, index) != SQLITE_NULL else { return nil }
+        return sqlite3_column_double(stmt, index)
+    }
+
     private func bindText(_ stmt: OpaquePointer?, _ index: Int32, _ value: String) {
         sqlite3_bind_text(stmt, index, value, -1, sqliteTransient)
     }
@@ -936,6 +950,14 @@ class APIClient: ObservableObject {
     private func bindOptionalInt(_ stmt: OpaquePointer?, _ index: Int32, _ value: Int?) {
         if let value {
             sqlite3_bind_int(stmt, index, Int32(value))
+        } else {
+            sqlite3_bind_null(stmt, index)
+        }
+    }
+
+    private func bindOptionalDouble(_ stmt: OpaquePointer?, _ index: Int32, _ value: Double?) {
+        if let value {
+            sqlite3_bind_double(stmt, index, value)
         } else {
             sqlite3_bind_null(stmt, index)
         }
@@ -1023,6 +1045,7 @@ class APIClient: ObservableObject {
                     title TEXT NOT NULL,
                     author TEXT,
                     year_published INTEGER,
+                    cost REAL,
                     publisher TEXT,
                     fiction_nonfiction TEXT,
                     genre TEXT,
@@ -1039,6 +1062,7 @@ class APIClient: ObservableObject {
                     game_system TEXT,
                     genre TEXT,
                     year_released INTEGER,
+                    cost REAL,
                     image_url TEXT,
                     status TEXT DEFAULT 'owned'
                 )
@@ -1051,6 +1075,7 @@ class APIClient: ObservableObject {
                     director TEXT,
                     "cast" TEXT,
                     year_released INTEGER,
+                    cost REAL,
                     studio TEXT,
                     genre TEXT,
                     format TEXT,
@@ -1058,6 +1083,10 @@ class APIClient: ObservableObject {
                     status TEXT DEFAULT 'owned'
                 )
             """)
+
+            try ensureColumnExists(db, table: "books", column: "cost", definition: "REAL")
+            try ensureColumnExists(db, table: "video_games", column: "cost", definition: "REAL")
+            try ensureColumnExists(db, table: "movies", column: "cost", definition: "REAL")
 
             try execute(db, sql: """
                 CREATE TABLE IF NOT EXISTS borrowers (
@@ -1081,6 +1110,21 @@ class APIClient: ObservableObject {
                 )
             """)
         }
+    }
+
+    private func ensureColumnExists(_ db: OpaquePointer?, table: String, column: String, definition: String) throws {
+        let pragmaSQL = "PRAGMA table_info(\(table))"
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        try require(sqlite3_prepare_v2(db, pragmaSQL, -1, &stmt, nil) == SQLITE_OK, db: db)
+
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if columnText(stmt, 1) == column {
+                return
+            }
+        }
+
+        try execute(db, sql: "ALTER TABLE \(table) ADD COLUMN \(column) \(definition)")
     }
 
     private func migrateExistingRemoteImagesToLocalCache() {

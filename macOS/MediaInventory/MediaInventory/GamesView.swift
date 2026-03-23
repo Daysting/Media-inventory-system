@@ -45,6 +45,7 @@ struct GamesView: View {
                             imageUrl: game.imageUrl,
                             title: game.title,
                             subtitle: game.platform,
+                            detailLine: game.cost.map { "Cost: \($0.currencyDisplayText)" },
                             status: game.status,
                             onEdit: { gameToEdit = game }
                         ) {
@@ -78,6 +79,7 @@ struct AddGameForm: View {
     @State private var platform = ""
     @State private var yearReleased = ""
     @State private var genre = ""
+    @State private var cost = ""
     @State private var rating = ""
     @State private var imageUrl = ""
     
@@ -96,6 +98,7 @@ struct AddGameForm: View {
                 
                 Section("Details") {
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                     TextField("Rating", text: $rating)
                 }
                 
@@ -118,7 +121,8 @@ struct AddGameForm: View {
                         yearReleased: Int(yearReleased),
                         genre: genre.isEmpty ? nil : genre,
                         rating: rating.isEmpty ? nil : rating,
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     isPresented = false
                 }
@@ -146,6 +150,7 @@ struct EditGameForm: View {
     @State private var platform: String
     @State private var yearReleased: String
     @State private var genre: String
+    @State private var cost: String
     @State private var imageUrl: String
 
     init(game: Game) {
@@ -154,6 +159,7 @@ struct EditGameForm: View {
         _platform = State(initialValue: game.platform ?? "")
         _yearReleased = State(initialValue: game.yearReleased.map(String.init) ?? "")
         _genre = State(initialValue: game.genre ?? "")
+        _cost = State(initialValue: game.cost.map { String(format: "%.2f", $0) } ?? "")
         _imageUrl = State(initialValue: game.imageUrl ?? "")
     }
 
@@ -171,6 +177,7 @@ struct EditGameForm: View {
 
                 Section("Details") {
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                 }
 
                 Section("Image") {
@@ -191,7 +198,8 @@ struct EditGameForm: View {
                         platform: platform.isEmpty ? nil : platform,
                         genre: genre.isEmpty ? nil : genre,
                         yearReleased: Int(yearReleased),
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     dismiss()
                 }

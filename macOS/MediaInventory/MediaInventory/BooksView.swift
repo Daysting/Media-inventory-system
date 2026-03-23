@@ -49,6 +49,7 @@ struct BooksView: View {
                             imageUrl: book.imageUrl,
                             title: book.title,
                             subtitle: book.author,
+                            detailLine: book.cost.map { "Cost: \($0.currencyDisplayText)" },
                             status: book.status,
                             onEdit: { bookToEdit = book }
                         ) {
@@ -83,6 +84,7 @@ struct AddBookForm: View {
     @State private var publisher = ""
     @State private var fictionNonfiction = ""
     @State private var genre = ""
+    @State private var cost = ""
     @State private var description = ""
     @State private var imageUrl = ""
     
@@ -106,6 +108,7 @@ struct AddBookForm: View {
                         Text("Non-Fiction").tag("Non-Fiction")
                     }
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                 }
                 
                 Section("Description") {
@@ -132,7 +135,8 @@ struct AddBookForm: View {
                         fictionNonfiction: fictionNonfiction.isEmpty ? nil : fictionNonfiction,
                         genre: genre.isEmpty ? nil : genre,
                         description: description.isEmpty ? nil : description,
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     isPresented = false
                 }
@@ -194,6 +198,7 @@ struct MediaCard: View {
     let imageUrl: String?
     let title: String
     let subtitle: String?
+    let detailLine: String?
     let status: String?
     var onEdit: (() -> Void)?
     let onDelete: () -> Void
@@ -253,6 +258,12 @@ struct MediaCard: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
+                if let detailLine, !detailLine.isEmpty {
+                    Text(detailLine)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
                 if let status {
                     Badge(status).padding(.top, 2)
                 }
@@ -287,6 +298,7 @@ struct EditBookForm: View {
     @State private var publisher: String
     @State private var fictionNonfiction: String
     @State private var genre: String
+    @State private var cost: String
     @State private var description: String
     @State private var imageUrl: String
 
@@ -298,6 +310,7 @@ struct EditBookForm: View {
         _publisher = State(initialValue: book.publisher ?? "")
         _fictionNonfiction = State(initialValue: book.fictionNonfiction ?? "")
         _genre = State(initialValue: book.genre ?? "")
+        _cost = State(initialValue: book.cost.map { String(format: "%.2f", $0) } ?? "")
         _description = State(initialValue: book.description ?? "")
         _imageUrl = State(initialValue: book.imageUrl ?? "")
     }
@@ -322,6 +335,7 @@ struct EditBookForm: View {
                         Text("Non-Fiction").tag("Non-Fiction")
                     }
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                 }
 
                 Section("Description") {
@@ -349,7 +363,8 @@ struct EditBookForm: View {
                         fictionNonfiction: fictionNonfiction.isEmpty ? nil : fictionNonfiction,
                         genre: genre.isEmpty ? nil : genre,
                         description: description.isEmpty ? nil : description,
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     dismiss()
                 }
@@ -361,4 +376,14 @@ struct EditBookForm: View {
         .padding(20)
         .frame(minWidth: 500, minHeight: 600)
     }
+}
+
+func parseCurrency(_ rawValue: String) -> Double? {
+    let normalized = rawValue
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .replacingOccurrences(of: "$", with: "")
+        .replacingOccurrences(of: ",", with: "")
+
+    guard !normalized.isEmpty else { return nil }
+    return Double(normalized)
 }

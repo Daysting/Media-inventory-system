@@ -48,6 +48,7 @@ struct MoviesView: View {
                             imageUrl: movie.imageUrl,
                             title: movie.title,
                             subtitle: movie.director,
+                            detailLine: movie.cost.map { "Cost: \($0.currencyDisplayText)" },
                             status: movie.status,
                             onEdit: { movieToEdit = movie }
                         ) {
@@ -82,6 +83,7 @@ struct AddMovieForm: View {
     @State private var yearReleased = ""
     @State private var studio = ""
     @State private var genre = ""
+    @State private var cost = ""
     @State private var rating = ""
     @State private var runtimeMinutes = ""
     @State private var imageUrl = ""
@@ -102,6 +104,7 @@ struct AddMovieForm: View {
                 Section("Details") {
                     TextField("Studio", text: $studio)
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                     TextField("Rating", text: $rating)
                     TextField("Runtime (minutes)", text: $runtimeMinutes)
                 }
@@ -125,7 +128,8 @@ struct AddMovieForm: View {
                         genre: genre.isEmpty ? nil : genre,
                         rating: rating.isEmpty ? nil : rating,
                         runtimeMinutes: Int(runtimeMinutes),
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     isPresented = false
                 }
@@ -155,6 +159,7 @@ struct EditMovieForm: View {
     @State private var yearReleased: String
     @State private var studio: String
     @State private var genre: String
+    @State private var cost: String
     @State private var rating: String
     @State private var imageUrl: String
 
@@ -166,6 +171,7 @@ struct EditMovieForm: View {
         _yearReleased = State(initialValue: movie.yearReleased.map(String.init) ?? "")
         _studio = State(initialValue: movie.studio ?? "")
         _genre = State(initialValue: movie.genre ?? "")
+        _cost = State(initialValue: movie.cost.map { String(format: "%.2f", $0) } ?? "")
         _rating = State(initialValue: movie.rating ?? "")
         _imageUrl = State(initialValue: movie.imageUrl ?? "")
     }
@@ -186,6 +192,7 @@ struct EditMovieForm: View {
                 Section("Details") {
                     TextField("Studio", text: $studio)
                     TextField("Genre", text: $genre)
+                    TextField("Cost", text: $cost)
                     TextField("Rating", text: $rating)
                 }
 
@@ -210,7 +217,8 @@ struct EditMovieForm: View {
                         studio: studio.isEmpty ? nil : studio,
                         genre: genre.isEmpty ? nil : genre,
                         rating: rating.isEmpty ? nil : rating,
-                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl,
+                        cost: parseCurrency(cost)
                     )
                     dismiss()
                 }

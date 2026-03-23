@@ -6,6 +6,7 @@ struct Book: Identifiable, Codable {
     let title: String
     let author: String?
     let yearPublished: Int?
+    let cost: Double?
     let publisher: String?
     let fictionNonfiction: String?
     let genre: String?
@@ -18,6 +19,7 @@ struct Book: Identifiable, Codable {
         case title
         case author
         case yearPublished = "year_published"
+        case cost
         case publisher
         case fictionNonfiction = "fiction_nonfiction"
         case genre
@@ -32,6 +34,7 @@ struct Book: Identifiable, Codable {
         title = container.decodeFlexibleString(forKey: .title, default: "Untitled")
         author = container.decodeFlexibleOptionalString(forKey: .author)
         yearPublished = container.decodeFlexibleOptionalInt(forKey: .yearPublished)
+        cost = container.decodeFlexibleOptionalDouble(forKey: .cost)
         publisher = container.decodeFlexibleOptionalString(forKey: .publisher)
         fictionNonfiction = container.decodeFlexibleOptionalString(forKey: .fictionNonfiction)
         genre = container.decodeFlexibleOptionalString(forKey: .genre)
@@ -48,6 +51,7 @@ struct Game: Identifiable, Codable {
     let developer: String?
     let platform: String?
     let yearReleased: Int?
+    let cost: Double?
     let genre: String?
     let rating: String?
     let description: String?
@@ -60,6 +64,7 @@ struct Game: Identifiable, Codable {
         case developer
         case platform
         case yearReleased = "year_released"
+        case cost
         case genre
         case rating
         case description
@@ -74,6 +79,7 @@ struct Game: Identifiable, Codable {
         developer = try container.decodeIfPresent(String.self, forKey: .developer)
         platform = try container.decodeIfPresent(String.self, forKey: .platform)
         yearReleased = try container.decodeIfPresent(Int.self, forKey: .yearReleased)
+        cost = container.decodeFlexibleOptionalDouble(forKey: .cost)
         genre = try container.decodeIfPresent(String.self, forKey: .genre)
         rating = try container.decodeIfPresent(String.self, forKey: .rating)
         description = try container.decodeIfPresent(String.self, forKey: .description)
@@ -89,6 +95,7 @@ struct Movie: Identifiable, Codable {
     let director: String?
     let cast: String?
     let yearReleased: Int?
+    let cost: Double?
     let studio: String?
     let genre: String?
     let rating: String?
@@ -102,6 +109,7 @@ struct Movie: Identifiable, Codable {
         case director
         case cast
         case yearReleased = "year_released"
+        case cost
         case studio
         case genre
         case rating
@@ -110,12 +118,13 @@ struct Movie: Identifiable, Codable {
         case status
     }
 
-    init(id: String, title: String, director: String?, cast: String?, yearReleased: Int?, studio: String?, genre: String?, rating: String?, runtimeMinutes: Int?, imageUrl: String?, status: String) {
+    init(id: String, title: String, director: String?, cast: String?, yearReleased: Int?, cost: Double?, studio: String?, genre: String?, rating: String?, runtimeMinutes: Int?, imageUrl: String?, status: String) {
         self.id = id
         self.title = title
         self.director = director
         self.cast = cast
         self.yearReleased = yearReleased
+        self.cost = cost
         self.studio = studio
         self.genre = genre
         self.rating = rating
@@ -131,6 +140,7 @@ struct Movie: Identifiable, Codable {
         director = container.decodeFlexibleOptionalString(forKey: .director)
         cast = container.decodeFlexibleOptionalString(forKey: .cast)
         yearReleased = container.decodeFlexibleOptionalInt(forKey: .yearReleased)
+        cost = container.decodeFlexibleOptionalDouble(forKey: .cost)
         studio = container.decodeFlexibleOptionalString(forKey: .studio)
         genre = container.decodeFlexibleOptionalString(forKey: .genre)
         rating = container.decodeFlexibleOptionalString(forKey: .rating)
@@ -323,6 +333,44 @@ private extension KeyedDecodingContainer {
 
         return nil
     }
+
+    func decodeFlexibleOptionalDouble(forKey key: K) -> Double? {
+        guard contains(key) else {
+            return nil
+        }
+
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key) {
+            return doubleValue
+        }
+
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key) {
+            return Double(intValue)
+        }
+
+        if let stringValue = try? decodeIfPresent(String.self, forKey: key) {
+            let normalized = stringValue
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "$", with: "")
+                .replacingOccurrences(of: ",", with: "")
+            return Double(normalized)
+        }
+
+        return nil
+    }
+}
+
+extension Double {
+    var currencyDisplayText: String {
+        Self.currencyFormatter.string(from: NSNumber(value: self)) ?? String(format: "$%.2f", self)
+    }
+
+    private static let currencyFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter
+    }()
 }
 
 // MARK: - Report Models
