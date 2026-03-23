@@ -29,8 +29,9 @@ class SearchIndexer {
             for book in apiClient.books {
                 let attributes = CSSearchableItemAttributeSet(itemContentType: "com.example.book")
                 attributes.title = book.title
-                attributes.subtitle = book.author ?? "Unknown Author"
-                attributes.contentDescription = book.description ?? book.genre ?? "No description"
+                let author = book.author ?? "Unknown Author"
+                let details = book.description ?? book.genre ?? "No description"
+                attributes.contentDescription = "Author: \(author)\n\(details)"
                 attributes.keywords = [book.genre ?? "", book.fictionNonfiction ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = book.imageUrl, let url = URL(string: imageUrl) {
@@ -60,8 +61,9 @@ class SearchIndexer {
             for game in apiClient.games {
                 let attributes = CSSearchableItemAttributeSet(itemContentType: "com.example.game")
                 attributes.title = game.title
-                attributes.subtitle = game.platform ?? "Unknown Platform"
-                attributes.contentDescription = game.description ?? game.genre ?? "No description"
+                let platform = game.platform ?? "Unknown Platform"
+                let details = game.description ?? game.genre ?? "No description"
+                attributes.contentDescription = "Platform: \(platform)\n\(details)"
                 attributes.keywords = [game.genre ?? "", game.platform ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = game.imageUrl, let url = URL(string: imageUrl) {
@@ -91,8 +93,9 @@ class SearchIndexer {
             for movie in apiClient.movies {
                 let attributes = CSSearchableItemAttributeSet(itemContentType: "com.example.movie")
                 attributes.title = movie.title
-                attributes.subtitle = movie.director ?? "Unknown Director"
-                attributes.contentDescription = movie.description ?? movie.genre ?? "No description"
+                let director = movie.director ?? "Unknown Director"
+                let details = movie.genre ?? "No description"
+                attributes.contentDescription = "Director: \(director)\n\(details)"
                 attributes.keywords = [movie.genre ?? "", movie.rating ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = movie.imageUrl, let url = URL(string: imageUrl) {
@@ -122,8 +125,9 @@ class SearchIndexer {
             for borrower in apiClient.borrowers {
                 let attributes = CSSearchableItemAttributeSet(itemContentType: "com.example.borrower")
                 attributes.title = borrower.fullName
-                attributes.subtitle = borrower.phoneNumber ?? borrower.email ?? "No contact info"
-                attributes.contentDescription = borrower.address ?? "No address on file"
+                let contact = borrower.phoneNumber ?? borrower.email ?? "No contact info"
+                let address = borrower.address ?? "No address on file"
+                attributes.contentDescription = "Contact: \(contact)\nAddress: \(address)"
                 
                 let item = CSSearchableItem(uniqueIdentifier: "borrower_\(borrower.id)", domainIdentifier: "com.mediaInventory.borrowers", attributeSet: attributes)
                 searchableItems.append(item)
