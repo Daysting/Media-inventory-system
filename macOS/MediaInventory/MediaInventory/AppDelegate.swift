@@ -6,13 +6,16 @@ extension Notification.Name {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var notificationManager: NotificationManager?
     var searchIndexer: SearchIndexer?
+    // NotificationManager is created on demand by callers; do not instantiate at launch
+    // because accessing UNUserNotificationCenter.current() triggers an XPC connection to
+    // usernoted, which in turn tries task_name_for_pid on this process and logs a
+    // "Unable to obtain a task name port right" kernel error.
+    static var sharedNotificationManager: NotificationManager = NotificationManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         configureApplicationIcon()
         emitDiagnostic("Local mode enabled: using native SQLite datastore")
-        setupNotificationManager()
         if shouldEnableSpotlightIndexing() {
             setupSpotlightIntegration()
         } else {
@@ -24,14 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let iconImage = NSImage(named: "AppIcon") {
             NSApp.applicationIconImage = iconImage
         }
-    }
-
-    // MARK: - Notifications
-    // NotificationManager is instantiated here but permission is NOT requested eagerly.
-    // The manager will request permission the first time a notification needs to be sent,
-    // which avoids triggering IPC with usernoted on every launch.
-    private func setupNotificationManager() {
-        notificationManager = NotificationManager()
     }
 
     // MARK: - Spotlight Integration
