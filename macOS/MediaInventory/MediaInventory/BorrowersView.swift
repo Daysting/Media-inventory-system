@@ -39,7 +39,7 @@ struct BorrowersView: View {
             .cornerRadius(8)
             .padding(20)
             
-            Table(filteredBorrowers) {
+            Table(apiClient.borrowers) {
                 TableColumn("Name", value: \.fullName)
                 TableColumn("Email") { borrower in
                     Text(borrower.email ?? "-")
