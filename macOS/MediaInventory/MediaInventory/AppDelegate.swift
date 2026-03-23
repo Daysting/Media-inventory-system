@@ -118,6 +118,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         process.currentDirectoryURL = URL(fileURLWithPath: projectRoot)
         var environment = ProcessInfo.processInfo.environment
         environment["MEDIA_INVENTORY_PORT"] = String(port)
+        environment["MEDIA_INVENTORY_MANAGED_LAUNCH"] = "1"
+        environment["PYTHONUNBUFFERED"] = "1"
         process.environment = environment
 
         let venvPython = "\(projectRoot)/.venv/bin/python"
@@ -223,8 +225,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let candidates = [
             envPath,
             userDefaultPath,
-            "\(home)/Documents/Media-inventory-system",
-            "\(home)/Media-inventory-system"
+            "\(home)/Media-inventory-system",
+            "\(home)/Documents/Media-inventory-system"
         ].compactMap { $0 }
 
         for candidate in candidates {

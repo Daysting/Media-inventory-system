@@ -25,6 +25,11 @@ def resolve_server_port():
 
     return 5000
 
+
+def should_use_reloader():
+    managed_launch = os.environ.get('MEDIA_INVENTORY_MANAGED_LAUNCH') == '1'
+    return not managed_launch
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -545,4 +550,8 @@ def repair():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=resolve_server_port())
+    app.run(
+        debug=True,
+        port=resolve_server_port(),
+        use_reloader=should_use_reloader()
+    )
