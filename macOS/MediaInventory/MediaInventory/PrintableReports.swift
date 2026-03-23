@@ -41,7 +41,7 @@ struct PrintReportPage: View {
 struct PrintTable: View {
     struct Col {
         let title: String
-        let width: CGFloat
+        let width: CGFloat?
         var align: Alignment = .leading
     }
 
@@ -54,30 +54,41 @@ struct PrintTable: View {
             HStack(spacing: 0) {
                 ForEach(Array(columns.enumerated()), id: \.offset) { _, col in
                     Text(col.title)
-                        .font(.system(size: 8.5, weight: .semibold))
-                        .frame(width: col.width, alignment: col.align)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 5)
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(maxWidth: col.width ?? .infinity, alignment: col.align)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 6)
                         .background(Color(white: 0.90))
                 }
             }
             Divider().background(Color.gray)
 
             // Data rows
-            ForEach(Array(rows.enumerated()), id: \.offset) { rowIdx, row in
-                HStack(spacing: 0) {
-                    ForEach(Array(row.enumerated()), id: \.offset) { colIdx, cell in
-                        Text(cell)
-                            .font(.system(size: 8.5))
-                            .lineLimit(2)
-                            .frame(width: columns[safeIdx: colIdx]?.width ?? 80,
-                                   alignment: columns[safeIdx: colIdx]?.align ?? .leading)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 4)
-                    }
+            if rows.isEmpty {
+                HStack {
+                    Text("No data")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .padding(12)
+                    Spacer()
                 }
-                .background(rowIdx % 2 == 0 ? Color.white : Color(white: 0.97))
-                Divider().opacity(0.35)
+                .background(Color.white)
+            } else {
+                ForEach(Array(rows.enumerated()), id: \.offset) { rowIdx, row in
+                    HStack(spacing: 0) {
+                        ForEach(Array(row.enumerated()), id: \.offset) { colIdx, cell in
+                            Text(cell)
+                                .font(.system(size: 10))
+                                .lineLimit(3)
+                                .frame(maxWidth: columns[safeIdx: colIdx]?.width ?? .infinity,
+                                       alignment: columns[safeIdx: colIdx]?.align ?? .leading)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 5)
+                        }
+                    }
+                    .background(rowIdx % 2 == 0 ? Color.white : Color(white: 0.97))
+                    Divider().opacity(0.35)
+                }
             }
         }
         .overlay(Rectangle().stroke(Color(white: 0.78), lineWidth: 0.5))

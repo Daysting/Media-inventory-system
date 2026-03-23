@@ -6,6 +6,7 @@ import AppKit
 struct ReportsView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var selectedReport: ReportKind = .inventorySummary
+    @State private var showPreview: Bool = false
 
     enum ReportKind: String, CaseIterable {
         case inventorySummary   = "Summary"
@@ -37,6 +38,14 @@ struct ReportsView: View {
                 Spacer()
 
                 Button {
+                    showPreview.toggle()
+                } label: {
+                    Label(showPreview ? "Hide Preview" : "Show Preview", systemImage: "eye")
+                }
+                .buttonStyle(.borderless)
+                .disabled(apiClient.isLoadingReport)
+
+                Button {
                     printCurrentReport()
                 } label: {
                     Label("Print", systemImage: "printer")
@@ -63,6 +72,14 @@ struct ReportsView: View {
                 ProgressView("Loading report…")
                     .controlSize(.large)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if showPreview {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        printPreviewContent()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(20)
+                }
             } else {
                 Group {
                     switch selectedReport {
@@ -93,6 +110,39 @@ struct ReportsView: View {
         case .overdueItems:      apiClient.fetchOverdueItems()
         case .booksCatalog, .gamesCatalog, .moviesCatalog, .electronicsCatalog:
             break // data already loaded at startup
+        }
+    }
+
+    @ViewBuilder
+    private func printPreviewContent() -> some View {
+        let now = Date()
+        switch selectedReport {
+        case .inventorySummary:
+            if let s = apiClient.inventorySummary {
+                PrintableInventorySummary(summary: s)
+            } else {
+                Text("No data available.").foregroundColor(.secondary)
+            }
+        case .borrowerActivity:
+            PrintableBorrowerActivityReport(entries: apiClient.borrowerActivity)
+        case .checkoutHistory:
+            PrintableCheckoutHistoryReport(entries: apiClient.checkoutHistoryEntries)
+        case .genreDistribution:
+            if let dist = apiClient.genreDistribution {
+                PrintableGenreReport(distribution: dist)
+            } else {
+                Text("No data available.").foregroundColor(.secondary)
+            }
+        case .overdueItems:
+            PrintableOverdueReport(items: apiClient.overdueItems)
+        case .booksCatalog:
+            PrintableBooksCatalog(books: apiClient.books)
+        case .gamesCatalog:
+            PrintableGamesCatalog(games: apiClient.games)
+        case .moviesCatalog:
+            PrintableMoviesCatalog(movies: apiClient.movies)
+        case .electronicsCatalog:
+            PrintableElectronicsCatalog(electronics: apiClient.electronics)
         }
     }
 
@@ -148,21 +198,26 @@ struct ReportsView: View {
         let host = NSHostingView(rootView: page)
         host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 100)
 
-        // NSHostingView requires a valid window backing store before layout/print;
-        // without one CoreGraphics has no context and emits CGContextClipToRect errors.
-        let offscreen = NSWindow(
-            contentRect: NSRect(x: -99999, y: -99999, width: pageWidth, height: 100),
+        // The window must be ordered into the window server session (even if
+        // invisible) so that the compositor allocates a real CGContext.
+        // Without this, NSPrintOperation's drawRect gets a null context and
+        // CoreGraphics logs CGContextClipToRect: invalid context 0x0.
+        let printWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: pageWidth, height: 100),
             styleMask: .borderless,
             backing: .buffered,
             defer: false
         )
-        offscreen.isReleasedWhenClosed = false
-        offscreen.contentView = host
+        printWindow.isReleasedWhenClosed = false
+        printWindow.isOpaque = false
+        printWindow.alphaValue = 0          // invisible but gets a real CGContext
+        printWindow.contentView = host
+        printWindow.orderFrontRegardless()  // registers with the window server
 
         host.layoutSubtreeIfNeeded()
         let fittedHeight = max(host.fittingSize.height, 200)
         host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: fittedHeight)
-        offscreen.setContentSize(NSSize(width: pageWidth, height: fittedHeight))
+        printWindow.setContentSize(NSSize(width: pageWidth, height: fittedHeight))
 
         let op = NSPrintOperation(view: host, printInfo: pi)
         op.jobTitle = "Daysting’s Home Inventory – \(title)"
@@ -170,7 +225,8 @@ struct ReportsView: View {
         op.showsProgressPanel = true
         op.run()
 
-        offscreen.close()
+        printWindow.orderOut(nil)
+        printWindow.close()
     }
 }
 
