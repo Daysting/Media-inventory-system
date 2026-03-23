@@ -282,9 +282,8 @@ private extension KeyedDecodingContainer {
             return Int(doubleValue)
         }
 
-        if let stringValue = try? decodeIfPresent(String.self, forKey: key),
-           let stringValue,
-           let intValue = Int(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
+          if let stringValue = try? decodeIfPresent(String.self, forKey: key),
+              let intValue = Int(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
             return intValue
         }
 
