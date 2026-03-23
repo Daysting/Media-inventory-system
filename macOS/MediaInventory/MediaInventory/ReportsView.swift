@@ -96,6 +96,9 @@ struct InventorySummaryReportView: View {
                             ReportStatCard(icon: "🎬", title: "Movies",
                                            value: "\(s.movies.total)",
                                            detail: "\(s.movies.owned) owned")
+                            ReportStatCard(icon: "💻", title: "Electronics",
+                                           value: "\(s.electronics.total)",
+                                           detail: "\(s.electronics.owned) owned")
                         }
                     }
 

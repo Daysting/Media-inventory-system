@@ -10,7 +10,7 @@ struct ContentView: View {
     @State private var startupDiagnostics: [String] = []
     
     enum Tab {
-        case dashboard, books, games, movies, borrowers, checkout, reports, diagnostics
+        case dashboard, books, games, movies, electronics, borrowers, checkout, reports, diagnostics
     }
     
     var body: some View {
@@ -58,6 +58,13 @@ struct ContentView: View {
                     label: "Movies",
                     isSelected: selectedTab == .movies,
                     action: { selectedTab = .movies }
+                )
+
+                NavigationButton(
+                    icon: "desktopcomputer",
+                    label: "Electronics",
+                    isSelected: selectedTab == .electronics,
+                    action: { selectedTab = .electronics }
                 )
 
                 Text("MANAGEMENT")
@@ -162,6 +169,8 @@ struct ContentView: View {
                                 GamesView()
                             case .movies:
                                 MoviesView()
+                            case .electronics:
+                                ElectronicsView()
                             case .borrowers:
                                 BorrowersView()
                             case .checkout:
@@ -218,6 +227,7 @@ struct ContentView: View {
         apiClient.fetchBooks()
         apiClient.fetchGames()
         apiClient.fetchMovies()
+        apiClient.fetchElectronics()
         apiClient.fetchBorrowers()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -388,6 +398,7 @@ extension ContentView.Tab {
         case .books: return "Books"
         case .games: return "Video Games"
         case .movies: return "Movies"
+        case .electronics: return "Electronics"
         case .borrowers: return "Borrowers"
         case .checkout: return "Checkout & Return"
         case .reports: return "Reports"
@@ -401,6 +412,7 @@ extension ContentView.Tab {
         case .books: return "Manage your book collection"
         case .games: return "Manage your game collection"
         case .movies: return "Manage your movie collection"
+        case .electronics: return "Manage your electronics inventory"
         case .borrowers: return "Manage borrower information"
         case .checkout: return "Manage item checkouts and returns"
         case .reports: return "Analytics and usage reports"

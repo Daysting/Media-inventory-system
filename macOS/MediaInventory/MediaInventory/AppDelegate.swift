@@ -42,6 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Books", action: #selector(showBooks), keyEquivalent: "b"))
         menu.addItem(NSMenuItem(title: "Video Games", action: #selector(showGames), keyEquivalent: "g"))
         menu.addItem(NSMenuItem(title: "Movies", action: #selector(showMovies), keyEquivalent: "m"))
+        menu.addItem(NSMenuItem(title: "Electronics", action: #selector(showElectronics), keyEquivalent: "e"))
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
@@ -53,6 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func showBooks() {}
     @objc private func showGames() {}
     @objc private func showMovies() {}
+    @objc private func showElectronics() {}
     @objc private func showPreferences() {
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }

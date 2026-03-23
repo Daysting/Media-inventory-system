@@ -15,6 +15,9 @@ class SearchIndexer {
         
         // Index Movies
         indexMovies(apiClient: apiClient)
+
+        // Index Electronics
+        indexElectronics(apiClient: apiClient)
         
         // Index Borrowers
         indexBorrowers(apiClient: apiClient)
@@ -116,6 +119,32 @@ class SearchIndexer {
         }
     }
     
+    private func indexElectronics(apiClient: APIClient) {
+        apiClient.fetchElectronics()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            var searchableItems: [CSSearchableItem] = []
+
+            for electronic in apiClient.electronics {
+                let attributes = CSSearchableItemAttributeSet(itemContentType: "com.example.electronic")
+                attributes.title = electronic.title
+                let serial = electronic.serialNumber ?? "No serial number"
+                let details = electronic.description ?? "No description"
+                attributes.contentDescription = "Serial Number: \(serial)\n\(details)"
+                attributes.keywords = [serial].filter { !$0.isEmpty }
+
+                let item = CSSearchableItem(uniqueIdentifier: "electronic_\(electronic.id)", domainIdentifier: "com.mediaInventory.electronics", attributeSet: attributes)
+                searchableItems.append(item)
+            }
+
+            CSSearchableIndex.default().indexSearchableItems(searchableItems) { error in
+                if let error = error {
+                    print("Error indexing electronics: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
     private func indexBorrowers(apiClient: APIClient) {
         apiClient.fetchBorrowers()
         

@@ -150,6 +150,44 @@ struct Movie: Identifiable, Codable {
     }
 }
 
+// MARK: - Electronics Model
+struct Electronic: Identifiable, Codable {
+    let id: String
+    let title: String
+    let serialNumber: String?
+    let cost: Double?
+    let description: String?
+    let status: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case serialNumber = "serial_number"
+        case cost
+        case description
+        case status
+    }
+
+    init(id: String, title: String, serialNumber: String?, cost: Double?, description: String?, status: String) {
+        self.id = id
+        self.title = title
+        self.serialNumber = serialNumber
+        self.cost = cost
+        self.description = description
+        self.status = status
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = container.decodeFlexibleID(forKey: .id)
+        title = container.decodeFlexibleString(forKey: .title, default: "Untitled")
+        serialNumber = container.decodeFlexibleOptionalString(forKey: .serialNumber)
+        cost = container.decodeFlexibleOptionalDouble(forKey: .cost)
+        description = container.decodeFlexibleOptionalString(forKey: .description)
+        status = container.decodeFlexibleString(forKey: .status, default: "owned")
+    }
+}
+
 // MARK: - Borrower Model
 struct Borrower: Identifiable, Codable {
     let id: String
@@ -227,6 +265,22 @@ struct MoviesResponse: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         success = (try? container.decode(Bool.self, forKey: .success)) ?? false
         movies = (try? container.decode([Movie].self, forKey: .movies)) ?? []
+    }
+}
+
+struct ElectronicsResponse: Codable {
+    let success: Bool
+    let electronics: [Electronic]
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case electronics
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = (try? container.decode(Bool.self, forKey: .success)) ?? false
+        electronics = (try? container.decode([Electronic].self, forKey: .electronics)) ?? []
     }
 }
 
@@ -383,6 +437,7 @@ struct InventorySummaryReport {
     let books: MediaStats
     let videoGames: MediaStats
     let movies: MediaStats
+    let electronics: MediaStats
     let borrowersTotal: Int
     let currentlyCheckedOut: Int
     let totalCheckoutHistory: Int
@@ -454,6 +509,7 @@ struct DiagnosticsStats {
     let totalBooks: Int
     let totalGames: Int
     let totalMovies: Int
+    let totalElectronics: Int
     let totalBorrowers: Int
     let itemsCheckedOut: Int
 }

@@ -17,8 +17,15 @@ struct DashboardView: View {
                                           value: String(apiClient.games.count)) { navigate(.games) }
                         ClickableStatCard(icon: "🎬", title: "Movies",
                                           value: String(apiClient.movies.count)) { navigate(.movies) }
+                        ClickableStatCard(icon: "�", title: "Electronics",
+                                          value: String(apiClient.electronics.count)) { navigate(.electronics) }
+                    }
+                    GridRow {
                         ClickableStatCard(icon: "👥", title: "Borrowers",
                                           value: String(apiClient.borrowers.count)) { navigate(.borrowers) }
+                        Color.clear
+                        Color.clear
+                        Color.clear
                     }
                 }
                 .padding(.horizontal, 20)

@@ -204,14 +204,14 @@ private struct DiagnosticsStatGrid: View {
     var body: some View {
         Grid(alignment: .topLeading, horizontalSpacing: 12, verticalSpacing: 12) {
             GridRow {
-                DiagnosticsStatCell(label: "Books",    value: stats.totalBooks,      icon: "book.fill",          color: .blue)
-                DiagnosticsStatCell(label: "Games",    value: stats.totalGames,      icon: "gamecontroller.fill", color: .purple)
-                DiagnosticsStatCell(label: "Movies",   value: stats.totalMovies,     icon: "film.fill",           color: .red)
+                DiagnosticsStatCell(label: "Books",       value: stats.totalBooks,       icon: "book.fill",          color: .blue)
+                DiagnosticsStatCell(label: "Games",       value: stats.totalGames,       icon: "gamecontroller.fill", color: .purple)
+                DiagnosticsStatCell(label: "Movies",      value: stats.totalMovies,      icon: "film.fill",           color: .red)
             }
             GridRow {
-                DiagnosticsStatCell(label: "Borrowers",  value: stats.totalBorrowers,  icon: "person.2.fill",    color: .teal)
-                DiagnosticsStatCell(label: "Checked Out", value: stats.itemsCheckedOut, icon: "arrow.up.forward.circle.fill", color: .orange)
-                Color.clear.gridCellColumns(1)
+                DiagnosticsStatCell(label: "Electronics", value: stats.totalElectronics, icon: "desktopcomputer",     color: .indigo)
+                DiagnosticsStatCell(label: "Borrowers",   value: stats.totalBorrowers,   icon: "person.2.fill",       color: .teal)
+                DiagnosticsStatCell(label: "Checked Out", value: stats.itemsCheckedOut,  icon: "arrow.up.forward.circle.fill", color: .orange)
             }
         }
     }

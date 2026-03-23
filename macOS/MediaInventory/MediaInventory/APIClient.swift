@@ -6,6 +6,7 @@ class APIClient: ObservableObject {
     @Published var books: [Book] = []
     @Published var games: [Game] = []
     @Published var movies: [Movie] = []
+    @Published var electronics: [Electronic] = []
     @Published var borrowers: [Borrower] = []
 
     // MARK: - Report State
@@ -401,6 +402,102 @@ class APIClient: ObservableObject {
         }
     }
 
+    // MARK: - Electronics
+    func fetchElectronics() {
+        isLoading = true
+        runAsync {
+            var rows: [[String: Any]] = []
+            try self.withDatabase { db in
+                let sql = """
+                SELECT id, title, serial_number, cost, description, status
+                FROM electronics
+                ORDER BY title
+                """
+                var stmt: OpaquePointer?
+                defer { sqlite3_finalize(stmt) }
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                    rows.append([
+                        "id": self.columnText(stmt, 0) ?? UUID().uuidString,
+                        "title": self.columnText(stmt, 1) ?? "Untitled",
+                        "serial_number": self.columnText(stmt, 2) as Any,
+                        "cost": self.columnDouble(stmt, 3) as Any,
+                        "description": self.columnText(stmt, 4) as Any,
+                        "status": self.columnText(stmt, 5) ?? "owned"
+                    ])
+                }
+            }
+
+            let data = try JSONSerialization.data(withJSONObject: ["success": true, "electronics": rows])
+            let decoded = try JSONDecoder().decode(ElectronicsResponse.self, from: data)
+            DispatchQueue.main.async {
+                self.electronics = decoded.electronics
+                self.isLoading = false
+            }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+            self.isLoading = false
+        }
+    }
+
+    func addElectronic(title: String, serialNumber: String?, cost: Double?, description: String?) {
+        runAsync {
+            try self.withDatabase { db in
+                let id = try self.generateMediaID(prefix: "319724", digits: 8, table: "electronics", db: db)
+                let sql = """
+                INSERT INTO electronics (id, title, serial_number, cost, description, status)
+                VALUES (?, ?, ?, ?, ?, 'owned')
+                """
+                try self.execute(db, sql: sql, bind: { stmt in
+                    self.bindText(stmt, 1, id)
+                    self.bindText(stmt, 2, title)
+                    self.bindOptionalText(stmt, 3, serialNumber)
+                    self.bindOptionalDouble(stmt, 4, cost)
+                    self.bindOptionalText(stmt, 5, description)
+                })
+            }
+            DispatchQueue.main.async { self.fetchElectronics() }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateElectronic(id: String, title: String, serialNumber: String?, cost: Double?, description: String?) {
+        runAsync {
+            try self.withDatabase { db in
+                let sql = """
+                UPDATE electronics
+                SET title = ?, serial_number = ?, cost = ?, description = ?
+                WHERE id = ?
+                """
+                try self.execute(db, sql: sql, bind: { stmt in
+                    self.bindText(stmt, 1, title)
+                    self.bindOptionalText(stmt, 2, serialNumber)
+                    self.bindOptionalDouble(stmt, 3, cost)
+                    self.bindOptionalText(stmt, 4, description)
+                    self.bindText(stmt, 5, id)
+                })
+            }
+            DispatchQueue.main.async { self.fetchElectronics() }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteElectronic(id: String) {
+        runAsync {
+            try self.withDatabase { db in
+                try self.execute(db, sql: "DELETE FROM electronics WHERE id = ?", bind: { stmt in
+                    self.bindText(stmt, 1, id)
+                })
+            }
+            DispatchQueue.main.async { self.fetchElectronics() }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Borrowers
     func fetchBorrowers() {
         isLoading = true
@@ -498,6 +595,7 @@ class APIClient: ObservableObject {
                 books: .init(total: 0, owned: 0),
                 videoGames: .init(total: 0, owned: 0),
                 movies: .init(total: 0, owned: 0),
+                electronics: .init(total: 0, owned: 0),
                 borrowersTotal: 0,
                 currentlyCheckedOut: 0,
                 totalCheckoutHistory: 0
@@ -507,6 +605,7 @@ class APIClient: ObservableObject {
                 let booksStats = try self.countAndOwned(db: db, table: "books")
                 let gamesStats = try self.countAndOwned(db: db, table: "video_games")
                 let moviesStats = try self.countAndOwned(db: db, table: "movies")
+                let electronicsStats = try self.countAndOwned(db: db, table: "electronics")
                 let borrowersTotal = try self.scalarInt(db, sql: "SELECT COUNT(*) FROM borrowers")
                 let checkedOut = try self.scalarInt(db, sql: "SELECT COUNT(*) FROM checkout_history WHERE status = 'checked_out'")
                 let totalHistory = try self.scalarInt(db, sql: "SELECT COUNT(*) FROM checkout_history WHERE status = 'returned'")
@@ -515,6 +614,7 @@ class APIClient: ObservableObject {
                     books: .init(total: booksStats.total, owned: booksStats.owned),
                     videoGames: .init(total: gamesStats.total, owned: gamesStats.owned),
                     movies: .init(total: moviesStats.total, owned: moviesStats.owned),
+                    electronics: .init(total: electronicsStats.total, owned: electronicsStats.owned),
                     borrowersTotal: borrowersTotal,
                     currentlyCheckedOut: checkedOut,
                     totalCheckoutHistory: totalHistory
@@ -790,12 +890,13 @@ class APIClient: ObservableObject {
     func fetchDiagnosticsStats() {
         isLoadingDiagnostics = true
         runAsync {
-            var stats = DiagnosticsStats(totalBooks: 0, totalGames: 0, totalMovies: 0, totalBorrowers: 0, itemsCheckedOut: 0)
+            var stats = DiagnosticsStats(totalBooks: 0, totalGames: 0, totalMovies: 0, totalElectronics: 0, totalBorrowers: 0, itemsCheckedOut: 0)
             try self.withDatabase { db in
                 stats = DiagnosticsStats(
                     totalBooks: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM books"),
                     totalGames: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM video_games"),
                     totalMovies: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM movies"),
+                    totalElectronics: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM electronics"),
                     totalBorrowers: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM borrowers"),
                     itemsCheckedOut: try self.scalarInt(db, sql: "SELECT COUNT(*) FROM checkout_history WHERE status = 'checked_out'")
                 )
@@ -818,7 +919,7 @@ class APIClient: ObservableObject {
         runAsync {
             var issues = 0
             try self.withDatabase { db in
-                let requiredTables = ["books", "video_games", "movies", "borrowers", "checkout_history"]
+                let requiredTables = ["books", "video_games", "movies", "electronics", "borrowers", "checkout_history"]
                 for table in requiredTables {
                     let count = try self.scalarInt(db, sql: "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='\(table)'")
                     if count == 0 { issues += 1 }
@@ -827,6 +928,7 @@ class APIClient: ObservableObject {
                 issues += try self.scalarInt(db, sql: "SELECT COUNT(*) FROM checkout_history WHERE borrower_id NOT IN (SELECT id FROM borrowers)")
                 issues += try self.scalarInt(db, sql: "SELECT COUNT(*) FROM checkout_history WHERE status NOT IN ('checked_out', 'returned')")
                 issues += try self.scalarInt(db, sql: "SELECT COUNT(*) FROM books WHERE title IS NULL OR title = ''")
+                issues += try self.scalarInt(db, sql: "SELECT COUNT(*) FROM electronics WHERE title IS NULL OR title = ''")
                 issues += try self.scalarInt(db, sql: "SELECT COUNT(*) FROM borrowers WHERE first_name IS NULL OR first_name = '' OR last_name IS NULL OR last_name = ''")
             }
 
@@ -849,6 +951,7 @@ class APIClient: ObservableObject {
                 try self.execute(db, sql: "DELETE FROM checkout_history WHERE borrower_id NOT IN (SELECT id FROM borrowers)")
                 try self.execute(db, sql: "UPDATE checkout_history SET status = 'returned' WHERE status NOT IN ('checked_out', 'returned')")
                 try self.execute(db, sql: "UPDATE books SET title = '[Unknown Title]' WHERE title IS NULL OR title = ''")
+                try self.execute(db, sql: "UPDATE electronics SET title = '[Unknown Item]' WHERE title IS NULL OR title = ''")
                 try self.execute(db, sql: "UPDATE borrowers SET first_name = '[Unknown]' WHERE first_name IS NULL OR first_name = ''")
                 try self.execute(db, sql: "UPDATE borrowers SET last_name = '[Unknown]' WHERE last_name IS NULL OR last_name = ''")
             }
@@ -1084,9 +1187,24 @@ class APIClient: ObservableObject {
                 )
             """)
 
+            try execute(db, sql: """
+                CREATE TABLE IF NOT EXISTS electronics (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    serial_number TEXT,
+                    cost REAL,
+                    description TEXT,
+                    status TEXT DEFAULT 'owned'
+                )
+            """)
+
             try ensureColumnExists(db, table: "books", column: "cost", definition: "REAL")
             try ensureColumnExists(db, table: "video_games", column: "cost", definition: "REAL")
             try ensureColumnExists(db, table: "movies", column: "cost", definition: "REAL")
+            try ensureColumnExists(db, table: "electronics", column: "serial_number", definition: "TEXT")
+            try ensureColumnExists(db, table: "electronics", column: "cost", definition: "REAL")
+            try ensureColumnExists(db, table: "electronics", column: "description", definition: "TEXT")
+            try ensureColumnExists(db, table: "electronics", column: "status", definition: "TEXT DEFAULT 'owned'")
 
             try execute(db, sql: """
                 CREATE TABLE IF NOT EXISTS borrowers (
