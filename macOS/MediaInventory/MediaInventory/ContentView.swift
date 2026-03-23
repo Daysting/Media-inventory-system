@@ -122,7 +122,7 @@ struct ContentView: View {
                         Group {
                             switch selectedTab {
                             case .dashboard:
-                                DashboardView()
+                                DashboardView(navigate: { tab in selectedTab = tab })
                             case .books:
                                 BooksView()
                             case .games:
