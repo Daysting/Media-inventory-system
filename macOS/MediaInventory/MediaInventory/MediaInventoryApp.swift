@@ -13,19 +13,10 @@ struct MediaInventoryApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .commands {
-            CommandGroup(replacing: .appMenu) {
-                Button("About Media Inventory") {
-                    NSApp.orderFrontStandardAboutPanel(nil)
-                }
-                Divider()
+            CommandGroup(after: .appInfo) {
                 Button("Check for Updates") {
                     // TODO: Implement auto-updater
                 }
-                Divider()
-                Button("Quit Media Inventory") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q", modifiers: .command)
             }
             
             CommandGroup(replacing: .newItem) {

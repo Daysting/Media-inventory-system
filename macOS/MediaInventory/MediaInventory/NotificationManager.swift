@@ -1,42 +1,62 @@
 import Cocoa
+import UserNotifications
 
 class NotificationManager {
     func requestUserPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if granted {
-                DispatchQueue.main.async {
-                    NSApplication.shared.registerForRemoteNotifications()
-                }
+            if let error = error {
+                print("Notification permission error: \(error.localizedDescription)")
+                return
+            }
+
+            if !granted {
+                print("Notification permission was not granted")
             }
         }
     }
     
     func sendCheckoutReminder(media: String, dueDate: Date) {
-        let notification = NSUserNotification()
-        notification.title = "Media Checkout Reminder"
-        notification.subtitle = media
-        notification.informativeText = "Due back on \(dateFormatter.string(from: dueDate))"
-        notification.soundName = NSUserNotificationDefaultSoundName
-        
-        NSUserNotificationCenter.default.deliver(notification)
+        scheduleNotification(
+            title: "Media Checkout Reminder",
+            subtitle: media,
+            body: "Due back on \(dateFormatter.string(from: dueDate))"
+        )
     }
     
     func sendOverdueAlert(media: String, borrower: String, daysOverdue: Int) {
-        let notification = NSUserNotification()
-        notification.title = "Overdue Media Alert"
-        notification.subtitle = "\(media) - \(daysOverdue) days overdue"
-        notification.informativeText = "Please contact \(borrower) to return this item"
-        notification.soundName = NSUserNotificationDefaultSoundName
-        
-        NSUserNotificationCenter.default.deliver(notification)
+        scheduleNotification(
+            title: "Overdue Media Alert",
+            subtitle: "\(media) - \(daysOverdue) days overdue",
+            body: "Please contact \(borrower) to return this item"
+        )
     }
     
     func sendSuccessNotification(title: String, message: String) {
-        let notification = NSUserNotification()
-        notification.title = title
-        notification.informativeText = message
-        
-        NSUserNotificationCenter.default.deliver(notification)
+        scheduleNotification(
+            title: title,
+            subtitle: "",
+            body: message
+        )
+    }
+
+    private func scheduleNotification(title: String, subtitle: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.subtitle = subtitle
+        content.body = body
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to schedule notification: \(error.localizedDescription)")
+            }
+        }
     }
     
     private var dateFormatter: DateFormatter {
