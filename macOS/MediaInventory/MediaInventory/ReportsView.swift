@@ -198,21 +198,26 @@ struct ReportsView: View {
         let host = NSHostingView(rootView: page)
         host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 100)
 
-        // The window must be ordered into the window server session (even if
-        // invisible) so that the compositor allocates a real CGContext.
-        // Without this, NSPrintOperation's drawRect gets a null context and
-        // CoreGraphics logs CGContextClipToRect: invalid context 0x0.
+        // The window must be ordered into the window server session (even if invisible)
+        // so that the compositor allocates a real CGContext. Without this, NSPrintOperation's
+        // drawRect gets a null context and CoreGraphics logs CGContextClipToRect errors.
         let printWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: pageWidth, height: 100),
             styleMask: .borderless,
             backing: .buffered,
             defer: false
         )
-        printWindow.isReleasedWhenClosed = false
+
+        // Disable all scene/restoration tracking for this ephemeral window.
+        printWindow.isReleasedWhenClosed = true
         printWindow.isOpaque = false
-        printWindow.alphaValue = 0          // invisible but gets a real CGContext
+        printWindow.alphaValue = 0
+        printWindow.isRestorable = false
+        printWindow.restorationClass = nil
+        printWindow.identifier = NSUserInterfaceItemIdentifier("")
+
         printWindow.contentView = host
-        printWindow.orderFrontRegardless()  // registers with the window server
+        printWindow.orderFrontRegardless()
 
         host.layoutSubtreeIfNeeded()
         let fittedHeight = max(host.fittingSize.height, 200)
@@ -225,8 +230,12 @@ struct ReportsView: View {
         op.showsProgressPanel = true
         op.run()
 
+        // Clean up: remove from scene tracking, then close and release.
         printWindow.orderOut(nil)
-        printWindow.close()
+        DispatchQueue.main.async {
+            // Delay close to ensure print operation is fully finished.
+            printWindow.close()
+        }
     }
 }
 
