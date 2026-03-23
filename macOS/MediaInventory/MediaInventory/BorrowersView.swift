@@ -40,9 +40,15 @@ struct BorrowersView: View {
             
             Table(filteredBorrowers) {
                 TableColumn("Name", value: \.fullName)
-                TableColumn("Email", value: \.email ?? "-")
-                TableColumn("Phone", value: \.phoneNumber ?? "-")
-                TableColumn("Address", value: \.address ?? "-")
+                TableColumn("Email") { borrower in
+                    Text(borrower.email ?? "-")
+                }
+                TableColumn("Phone") { borrower in
+                    Text(borrower.phoneNumber ?? "-")
+                }
+                TableColumn("Address") { borrower in
+                    Text(borrower.address ?? "-")
+                }
                 TableColumn("") { borrower in
                     Button(action: { apiClient.deleteBorrower(id: borrower.id) }) {
                         Image(systemName: "trash")

@@ -39,9 +39,15 @@ struct MoviesView: View {
             
             Table(filteredMovies) {
                 TableColumn("Title", value: \.title)
-                TableColumn("Director", value: \.director ?? "-")
-                TableColumn("Genre", value: \.genre ?? "-")
-                TableColumn("Rating", value: \.rating ?? "-")
+                TableColumn("Director") { movie in
+                    Text(movie.director ?? "-")
+                }
+                TableColumn("Genre") { movie in
+                    Text(movie.genre ?? "-")
+                }
+                TableColumn("Rating") { movie in
+                    Text(movie.rating ?? "-")
+                }
                 TableColumn("Status") { movie in
                     Badge(movie.status)
                 }
