@@ -134,15 +134,6 @@ struct ReportsView: View {
     }
 
     private func sendToPrinter(_ content: AnyView, title: String, date: Date) {
-        let page = PrintReportPage(title: title, generatedAt: date, content: content)
-        let host = NSHostingView(rootView: page)
-        let pageWidth: CGFloat = 756
-        host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 1)
-        host.layout()
-        let fittedHeight = host.fittingSize.height
-        host.frame = NSRect(x: 0, y: 0, width: pageWidth,
-                            height: fittedHeight > 10 ? fittedHeight + 100 : 5000)
-
         let pi = NSPrintInfo.shared.copy() as! NSPrintInfo
         pi.topMargin    = 36; pi.bottomMargin = 36
         pi.leftMargin   = 36; pi.rightMargin  = 36
@@ -151,11 +142,35 @@ struct ReportsView: View {
         pi.isHorizontallyCentered = false
         pi.isVerticallyCentered   = false
 
+        let pageWidth = pi.paperSize.width - pi.leftMargin - pi.rightMargin
+
+        let page = PrintReportPage(title: title, generatedAt: date, content: content)
+        let host = NSHostingView(rootView: page)
+        host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 100)
+
+        // NSHostingView requires a valid window backing store before layout/print;
+        // without one CoreGraphics has no context and emits CGContextClipToRect errors.
+        let offscreen = NSWindow(
+            contentRect: NSRect(x: -99999, y: -99999, width: pageWidth, height: 100),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        offscreen.isReleasedWhenClosed = false
+        offscreen.contentView = host
+
+        host.layoutSubtreeIfNeeded()
+        let fittedHeight = max(host.fittingSize.height, 200)
+        host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: fittedHeight)
+        offscreen.setContentSize(NSSize(width: pageWidth, height: fittedHeight))
+
         let op = NSPrintOperation(view: host, printInfo: pi)
         op.jobTitle = "Daysting’s Home Inventory – \(title)"
-        op.showsPrintPanel  = true
+        op.showsPrintPanel    = true
         op.showsProgressPanel = true
         op.run()
+
+        offscreen.close()
     }
 }
 
