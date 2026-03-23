@@ -107,8 +107,12 @@ def get_video_games():
                     'id': game[0],
                     'title': game[1],
                     'game_system': game[2],
+                    'developer': game[2],
+                    'platform': game[2],
                     'genre': game[3],
                     'year_released': game[4],
+                    'rating': None,
+                    'description': None,
                     'image_url': game[5],
                     'status': game[6]
                 }
@@ -122,9 +126,10 @@ def get_video_games():
 def add_video_game():
     try:
         data = request.json
+        game_system = data.get('game_system') or data.get('platform') or data.get('developer')
         game_id = system.add_video_game(
             data.get('title'),
-            data.get('game_system'),
+            game_system,
             data.get('genre'),
             data.get('year_released'),
             data.get('image_url')
@@ -145,10 +150,11 @@ def delete_video_game(game_id):
 def update_video_game(game_id):
     try:
         data = request.json
+        game_system = data.get('game_system') or data.get('platform') or data.get('developer')
         system.update_video_game(
             game_id,
             data.get('title'),
-            data.get('game_system'),
+            game_system,
             data.get('genre'),
             data.get('year_released'),
             data.get('image_url')
@@ -179,6 +185,8 @@ def get_movies():
                     'studio': movie[5],
                     'genre': movie[6],
                     'format': movie[7],
+                    'rating': movie[7],
+                    'runtime_minutes': None,
                     'image_url': movie[8],
                     'status': movie[9]
                 }
@@ -192,6 +200,7 @@ def get_movies():
 def add_movie():
     try:
         data = request.json
+        movie_format = data.get('format') or data.get('rating')
         movie_id = system.add_movie(
             data.get('title'),
             data.get('director'),
@@ -199,7 +208,7 @@ def add_movie():
             data.get('year_released'),
             data.get('studio'),
             data.get('genre'),
-            data.get('format'),
+            movie_format,
             data.get('image_url')
         )
         return jsonify({'success': True, 'movie_id': movie_id})
@@ -218,6 +227,7 @@ def delete_movie(movie_id):
 def update_movie(movie_id):
     try:
         data = request.json
+        movie_format = data.get('format') or data.get('rating')
         system.update_movie(
             movie_id,
             data.get('title'),
@@ -226,7 +236,7 @@ def update_movie(movie_id):
             data.get('year_released'),
             data.get('studio'),
             data.get('genre'),
-            data.get('format'),
+            movie_format,
             data.get('image_url')
         )
         return jsonify({'success': True})
@@ -251,7 +261,8 @@ def get_borrowers():
                     'first_name': borrower[1],
                     'last_name': borrower[2],
                     'address': borrower[3],
-                    'phone_number': borrower[4]
+                    'phone_number': borrower[4],
+                    'email': None
                 }
                 for borrower in borrowers
             ]
