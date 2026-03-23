@@ -169,7 +169,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func isBackendReachable(baseURL: String) -> Bool {
-        guard let url = URL(string: baseURL + "/books") else {
+        guard let url = URL(string: baseURL + APIClient.backendValidationPath) else {
             return false
         }
 
@@ -180,8 +180,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let semaphore = DispatchSemaphore(value: 0)
         var reachable = false
 
-        URLSession.shared.dataTask(with: request) { _, response, error in
-            if error == nil, let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil,
+               let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode),
+               let data,
+               let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               jsonObject["success"] as? Bool == true,
+               jsonObject["stats"] as? [String: Any] != nil {
                 reachable = true
             }
             semaphore.signal()

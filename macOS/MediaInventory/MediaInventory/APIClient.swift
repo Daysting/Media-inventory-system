@@ -5,6 +5,7 @@ class APIClient: ObservableObject {
     static let apiBaseURLDefaultsKey = "MediaInventoryAPIBaseURL"
     static let preferredPorts = [5000, 5001, 5002]
     static let defaultBaseURL = baseURL(for: preferredPorts[0])
+    static let backendValidationPath = "/diagnostics"
 
     static func baseURL(for port: Int) -> String {
         "http://127.0.0.1:\(port)/api"
@@ -144,34 +145,25 @@ class APIClient: ObservableObject {
     // MARK: - Movies
     func fetchMovies() {
         isLoading = true
-        guard let url = URL(string: baseURL + "/movies") else {
-            errorMessage = URLError(.badURL).localizedDescription
-            isLoading = false
-            return
-        }
+        requestData(endpoint: "/movies") { [weak self] result in
+            guard let self else { return }
 
-        session.dataTask(with: url) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-
-                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: "/movies") {
-                case .failure(let validationError):
-                    self.errorMessage = validationError.localizedDescription
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
+            case .success(let validData):
+                do {
+                    let parsedMovies = try self.parseMoviesResponse(data: validData)
+                    self.movies = parsedMovies
                     self.isLoading = false
-                    return
-                case .success(let validData):
-                    do {
-                        let parsedMovies = try self.parseMoviesResponse(data: validData)
-                        self.movies = parsedMovies
-                        self.isLoading = false
-                    } catch {
-                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
-                        self.errorMessage = "Failed to decode /movies: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
-                        self.isLoading = false
-                    }
+                } catch {
+                    let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                    self.errorMessage = "Failed to decode /movies: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                    self.isLoading = false
                 }
             }
-        }.resume()
+        }
     }
     
     func addMovie(title: String, director: String?, yearReleased: Int?, genre: String?,
@@ -210,34 +202,25 @@ class APIClient: ObservableObject {
     // MARK: - Borrowers
     func fetchBorrowers() {
         isLoading = true
-        guard let url = URL(string: baseURL + "/borrowers") else {
-            errorMessage = URLError(.badURL).localizedDescription
-            isLoading = false
-            return
-        }
+        requestData(endpoint: "/borrowers") { [weak self] result in
+            guard let self else { return }
 
-        session.dataTask(with: url) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-
-                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: "/borrowers") {
-                case .failure(let validationError):
-                    self.errorMessage = validationError.localizedDescription
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
+            case .success(let validData):
+                do {
+                    let parsedBorrowers = try self.parseBorrowersResponse(data: validData)
+                    self.borrowers = parsedBorrowers
                     self.isLoading = false
-                    return
-                case .success(let validData):
-                    do {
-                        let parsedBorrowers = try self.parseBorrowersResponse(data: validData)
-                        self.borrowers = parsedBorrowers
-                        self.isLoading = false
-                    } catch {
-                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
-                        self.errorMessage = "Failed to decode /borrowers: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
-                        self.isLoading = false
-                    }
+                } catch {
+                    let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                    self.errorMessage = "Failed to decode /borrowers: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                    self.isLoading = false
                 }
             }
-        }.resume()
+        }
     }
     
     func addBorrower(firstName: String, lastName: String, address: String?, phoneNumber: String?, email: String?) {
@@ -272,97 +255,207 @@ class APIClient: ObservableObject {
     
     // MARK: - HTTP Methods
     private func fetch<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
-        guard let url = URL(string: baseURL + endpoint) else {
-            completion(.failure(URLError(.badURL)))
-            return
-        }
-        
-        session.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
-                case .failure(let validationError):
-                    completion(.failure(validationError))
-                    return
-                case .success(let validData):
-                    do {
-                        let decoded = try JSONDecoder().decode(T.self, from: validData)
-                        completion(.success(decoded))
-                    } catch {
-                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
-                        let snippet = String(payload.prefix(500))
-                        let detailedError = NSError(
-                            domain: "APIClient.Decoding",
-                            code: 1001,
-                            userInfo: [
-                                NSLocalizedDescriptionKey: "Failed to decode \(endpoint): \(error.localizedDescription)\nPayload: \(snippet)"
-                            ]
-                        )
-                        completion(.failure(detailedError))
-                    }
+        requestData(endpoint: endpoint) { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let validData):
+                do {
+                    let decoded = try JSONDecoder().decode(T.self, from: validData)
+                    completion(.success(decoded))
+                } catch {
+                    let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                    let snippet = String(payload.prefix(500))
+                    let detailedError = NSError(
+                        domain: "APIClient.Decoding",
+                        code: 1001,
+                        userInfo: [
+                            NSLocalizedDescriptionKey: "Failed to decode \(endpoint): \(error.localizedDescription)\nPayload: \(snippet)"
+                        ]
+                    )
+                    completion(.failure(detailedError))
                 }
             }
-        }.resume()
+        }
     }
     
     private func post(endpoint: String, parameters: [String: Any?], completion: @escaping (Result<SuccessResponse, Error>) -> Void) {
-        guard let url = URL(string: baseURL + endpoint) else {
-            completion(.failure(URLError(.badURL)))
+        requestData(endpoint: endpoint, method: "POST", parameters: parameters) { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let validData):
+                do {
+                    let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
+                    completion(.success(decoded))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    private func delete(endpoint: String, completion: @escaping (Result<SuccessResponse, Error>) -> Void) {
+        requestData(endpoint: endpoint, method: "DELETE") { result in
+            switch result {
+            case .failure(let error):
+                completion(.failure(error))
+            case .success(let validData):
+                do {
+                    let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
+                    completion(.success(decoded))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    private func requestData(
+        endpoint: String,
+        method: String = "GET",
+        parameters: [String: Any?]? = nil,
+        completion: @escaping (Result<Data, Error>) -> Void
+    ) {
+        let candidateBaseURLs = prioritizedCandidateBaseURLs()
+        attemptRequest(
+            endpoint: endpoint,
+            method: method,
+            parameters: parameters,
+            candidateBaseURLs: candidateBaseURLs,
+            index: 0,
+            completion: completion
+        )
+    }
+
+    private func attemptRequest(
+        endpoint: String,
+        method: String,
+        parameters: [String: Any?]?,
+        candidateBaseURLs: [String],
+        index: Int,
+        completion: @escaping (Result<Data, Error>) -> Void
+    ) {
+        guard index < candidateBaseURLs.count else {
+            completion(.failure(URLError(.cannotConnectToHost)))
             return
         }
-        
+
+        let candidateBaseURL = candidateBaseURLs[index]
+        guard let url = URL(string: candidateBaseURL + endpoint) else {
+            attemptRequest(
+                endpoint: endpoint,
+                method: method,
+                parameters: parameters,
+                candidateBaseURLs: candidateBaseURLs,
+                index: index + 1,
+                completion: completion
+            )
+            return
+        }
+
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            let filteredParams = parameters.compactMapValues { $0 }
-            request.httpBody = try JSONSerialization.data(withJSONObject: filteredParams)
-        } catch {
-            completion(.failure(error))
-            return
+        request.httpMethod = method
+
+        if let parameters {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            do {
+                let filteredParams = parameters.compactMapValues { $0 }
+                request.httpBody = try JSONSerialization.data(withJSONObject: filteredParams)
+            } catch {
+                completion(.failure(error))
+                return
+            }
         }
-        
+
         session.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
-                case .failure(let validationError):
-                    completion(.failure(validationError))
                 case .success(let validData):
-                    do {
-                        let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
-                        completion(.success(decoded))
-                    } catch {
-                        completion(.failure(error))
+                    APIClient.persistBaseURL(candidateBaseURL)
+                    completion(.success(validData))
+                case .failure(let validationError):
+                    if self.shouldRetryWithAlternateBaseURL(
+                        response: response,
+                        data: data,
+                        error: error,
+                        candidateBaseURLs: candidateBaseURLs,
+                        index: index
+                    ) {
+                        self.attemptRequest(
+                            endpoint: endpoint,
+                            method: method,
+                            parameters: parameters,
+                            candidateBaseURLs: candidateBaseURLs,
+                            index: index + 1,
+                            completion: completion
+                        )
+                        return
                     }
+
+                    completion(.failure(validationError))
                 }
             }
         }.resume()
     }
-    
-    private func delete(endpoint: String, completion: @escaping (Result<SuccessResponse, Error>) -> Void) {
-        guard let url = URL(string: baseURL + endpoint) else {
-            completion(.failure(URLError(.badURL)))
-            return
+
+    private func prioritizedCandidateBaseURLs() -> [String] {
+        let preferred = [APIClient.currentBaseURL] + APIClient.candidateBaseURLs
+        return Array(NSOrderedSet(array: preferred)) as? [String] ?? preferred
+    }
+
+    private func shouldRetryWithAlternateBaseURL(
+        response: URLResponse?,
+        data: Data?,
+        error: Error?,
+        candidateBaseURLs: [String],
+        index: Int
+    ) -> Bool {
+        guard index + 1 < candidateBaseURLs.count else {
+            return false
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        
-        session.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
-                case .failure(let validationError):
-                    completion(.failure(validationError))
-                case .success(let validData):
-                    do {
-                        let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
-                        completion(.success(decoded))
-                    } catch {
-                        completion(.failure(error))
-                    }
-                }
+
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .badServerResponse,
+                 .cannotConnectToHost,
+                 .cannotFindHost,
+                 .dnsLookupFailed,
+                 .networkConnectionLost,
+                 .notConnectedToInternet,
+                 .timedOut:
+                return true
+            default:
+                break
             }
-        }.resume()
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return true
+        }
+
+        let looksLikeBackendPayload = responseLooksLikeBackendPayload(data)
+
+        if httpResponse.statusCode == 403 {
+            return true
+        }
+
+        return !looksLikeBackendPayload
+    }
+
+    private func responseLooksLikeBackendPayload(_ data: Data?) -> Bool {
+        guard let data, !data.isEmpty else {
+            return false
+        }
+
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: data),
+              let root = jsonObject as? [String: Any] else {
+            return false
+        }
+
+        let knownKeys = ["success", "books", "games", "movies", "borrowers", "history", "stats", "barcodes"]
+        return knownKeys.contains { root[$0] != nil }
     }
 
     private func validatedResponseData(data: Data?, response: URLResponse?, error: Error?, endpoint: String) -> Result<Data, Error> {
