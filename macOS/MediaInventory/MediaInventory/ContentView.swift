@@ -139,7 +139,7 @@ struct ContentView: View {
                     HStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(0.75)
-                        Text("Connecting to local server... retrying once automatically")
+                        Text("Loading local database...")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                         Spacer()
@@ -215,32 +215,13 @@ struct ContentView: View {
 
     private func bootstrapInitialDataLoad() {
         isBootstrappingConnection = true
+        apiClient.fetchBooks()
+        apiClient.fetchGames()
+        apiClient.fetchMovies()
+        apiClient.fetchBorrowers()
 
-        func loadAll() {
-            apiClient.fetchBooks()
-            apiClient.fetchGames()
-            apiClient.fetchMovies()
-            apiClient.fetchBorrowers()
-        }
-
-        loadAll()
-
-        // Retry once after a short delay to absorb backend startup race conditions.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            if let currentError = apiClient.errorMessage,
-               isLikelyConnectionError(currentError) {
-                apiClient.errorMessage = nil
-            }
-            loadAll()
-        }
-
-        // End bootstrap phase; only then allow connection errors to surface.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             isBootstrappingConnection = false
-            if let currentError = apiClient.errorMessage,
-               isLikelyConnectionError(currentError) {
-                apiClient.errorMessage = "Could not connect to the server."
-            }
         }
     }
 

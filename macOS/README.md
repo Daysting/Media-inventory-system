@@ -15,7 +15,7 @@ A native Swift/SwiftUI macOS application for the Media Inventory System with Mac
 
 - macOS 13.0 or later
 - Xcode 14.0 or later
-- Media Inventory Flask backend running on `http://localhost:5000`
+- Local SQLite database file (`media_inventory.db`)
 
 ## Project Structure
 
@@ -49,20 +49,16 @@ MediaInventory/
 
 ## Getting Started
 
-### 0. Install Wizard (Fastest)
+### 0. Quick Setup
 
 From the repository root, run:
 
 ```bash
-./install_wizard_macos.sh
+cd macOS/MediaInventory
+open MediaInventory.xcodeproj
 ```
 
-The wizard will:
-- Check macOS, Python, and Xcode command-line tools
-- Create or reuse `.venv`
-- Install required Python dependencies
-- Create (or optionally recreate) `media_inventory.db`
-- Optionally open Xcode and start the Flask server
+The app uses a local SQLite database at the repository root (`media_inventory.db`) and initializes required tables automatically at startup.
 
 ### 1. Development Setup
 
@@ -81,13 +77,9 @@ open MediaInventory.xcodeproj
 3. Change the Bundle Identifier to match your app:
    - Example: `com.yourcompany.mediaInventory`
 
-### 3. Update API Configuration
+### 3. Data Configuration
 
-Edit `APIClient.swift` to point to your Flask backend:
-
-```swift
-private let baseURL = "http://localhost:5000/api"
-```
+`APIClient.swift` now reads and writes directly to SQLite. No HTTP backend process is required.
 
 ### 4. Build and Run
 
@@ -233,13 +225,13 @@ xcrun stapler staple MediaInventory.dmg
 3. Update `ContentView.swift` if adding new tabs
 4. Add menu items in `AppDelegate.swift`
 
-### Connecting to Backend
+### Connecting to Data
 
-The app communicates with your Flask backend via REST API. Ensure:
+The app communicates directly with SQLite. Ensure:
 
-- Flask server is running on `http://localhost:5000`
-- CORS is properly configured if running remotely
-- All API endpoints match Flask implementation
+- `media_inventory.db` exists (or let the app create it on first run)
+- App has filesystem permissions for the database path
+- Existing tables match the expected schema
 
 ### Testing Notifications
 
@@ -265,9 +257,9 @@ notificationManager.sendCheckoutReminder(media: "Test Book", dueDate: Date())
 
 ### Connection Issues
 
-- Verify Flask backend is running: `http://localhost:5000/api/books`
-- Check network connectivity
-- Review API client error messages
+- Verify the database path exists and is readable
+- Confirm the `media_inventory.db` file is valid SQLite
+- Review app error panel for SQLite errors
 
 ### Submission Issues
 

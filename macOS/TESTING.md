@@ -334,21 +334,14 @@ Open System Console and filter by app name:
 log stream --predicate 'eventMessage contains[cd] "mediaInventory"'
 ```
 
-### Test API Directly
+### Test Database Directly
 
 ```bash
-# Get books
-curl http://localhost:5000/api/books
+# Verify schema
+sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db ".tables"
 
-# Add book
-curl -X POST http://localhost:5000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Test",
-    "author": "Author",
-    "yearPublished": 2024,
-    "status": "Available"
-  }'
+# Verify integrity
+sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"
 ```
 
 ## ✅ Release Testing

@@ -73,18 +73,17 @@ MediaInventory/
 
 ## Testing Locally
 
-### 1. Start Flask Backend
+### 1. Prepare Local Database
 
 ```bash
 cd /Users/erickhofer/Media-inventory-system
-python -m flask run
-# Server running at http://localhost:5000
+sqlite3 media_inventory.db ".tables"
 ```
 
 ### 2. Run macOS App
 
 - Press `Cmd+R` in Xcode
-- App will connect to `http://localhost:5000/api`
+- App will connect directly to local SQLite
 - Try adding media and borrowers
 
 ### 3. Test Features
@@ -277,7 +276,7 @@ Apple will review your app (typically 1-3 days):
 ### Issue: API connection fails
 
 **Solution**:
-- Verify Flask server running: `curl http://localhost:5000/api/books`
+- Verify DB is accessible: `sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"`
 - Check `APIClient.baseURL` is correct
 - Look for network errors in Console
 
@@ -336,7 +335,7 @@ var filteredItems: [Item] {
 1. ✅ Set up Xcode project
 2. ✅ Add all Swift files
 3. ✅ Configure bundle identifier
-4. ✅ Test with local Flask backend
+4. ✅ Test with local SQLite datastore
 5. ✅ Create app icons (1024x1024)
 6. ✅ Write app description
 7. ✅ Take screenshots

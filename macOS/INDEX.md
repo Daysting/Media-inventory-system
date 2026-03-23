@@ -93,11 +93,9 @@ Welcome! Your macOS application is complete and ready to use. Start here to find
 - Dark mode support
 
 ### ✅ Backend Integration
-- REST API client
-- 12+ API endpoints
+- Native SQLite data client
 - SQLite database
-- Flask Python backend
-- CORS enabled
+- No Python runtime required
 
 ### ✅ Features
 - Books, Games, Movies management
@@ -130,11 +128,9 @@ Welcome! Your macOS application is complete and ready to use. Start here to find
 open /Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory.xcodeproj
 ```
 
-### Start Flask Backend
+### Verify Database
 ```bash
-cd /Users/erickhofer/Media-inventory-system
-source .venv/bin/activate
-python -m flask run
+sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db ".tables"
 ```
 
 ### Build the App
@@ -158,7 +154,7 @@ xcodebuild test -scheme MediaInventory
 
 1. **Read**: [SETUP_SUMMARY.md](SETUP_SUMMARY.md) (overview)
 2. **Follow**: [QUICKSTART.md](QUICKSTART.md) (get it running)
-3. **Test**: Run the app with Flask backend
+3. **Test**: Run the app with local SQLite datastore
 4. **Customize**: Update bundle identifier and app name
 5. **Reference**: Use [DEVELOPMENT.md](DEVELOPMENT.md) for distribution
 6. **Troubleshoot**: Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) if issues arise
@@ -201,12 +197,9 @@ macOS/
 │   ├── MediaInventory.xcodeproj/
 │   └── setup_xcode_project.sh
 │
-└── Backend
-    ├── app.py (Flask)
-    ├── system.py
-    ├── templates/index.html (web UI)
-    ├── static/
-    └── ...
+└── Data
+    ├── media_inventory.db
+    └── local SQLite schema
 ```
 
 ---
@@ -215,9 +208,7 @@ macOS/
 
 Before you begin:
 - [ ] Xcode installed (version 14.0+)
-- [ ] Python 3.9+ installed
-- [ ] Virtual environment activated (.venv)
-- [ ] Flask installed (`pip list | grep Flask`)
+- [ ] SQLite available (macOS default)
 - [ ] This folder has 8 .md files
 - [ ] This folder has 1 .xcodeproj folder
 - [ ] Swift files are in MediaInventory/MediaInventory/
@@ -226,7 +217,7 @@ Before you begin:
 
 ## 💡 Pro Tips
 
-1. **Keep Flask Running**: Run Flask in one terminal tab, Xcode in another
+1. **Single Process Runtime**: Only the macOS app needs to run
 2. **Use Console**: Press `Cmd+Shift+C` in Xcode to see app output
 3. **Build Cache**: Press `Cmd+Shift+K` to clean build folder if issues arise
 4. **Live Preview**: Use SwiftUI Canvas for real-time UI preview
@@ -244,9 +235,9 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 2. Check Xcode version: `xcode-select --version`
 3. Verify Swift: `swift --version`
 
-### For API Issues
-1. Check Flask running: `curl http://localhost:5000/api/books`
-2. Check network logs in Console
+### For Data Issues
+1. Check DB file: `ls -lah /Users/erickhofer/Media-inventory-system/media_inventory.db`
+2. Check DB integrity: `sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"`
 3. Verify bundle identifier matches
 
 ### For Feature Questions
@@ -269,7 +260,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for App Store submission
 | **Documentation** | ~50 pages |
 | **Features** | 3 media types + borrower system |
 | **Views** | 7 main views + menu bar |
-| **Database** | SQLite via Flask |
+| **Database** | SQLite (native in-app) |
 | **Distribution** | Mac App Store ready |
 
 ---

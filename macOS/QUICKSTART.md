@@ -90,12 +90,8 @@ open -a Xcode /Users/erickhofer/Media-inventory-system
 ### Step 7: Test Run
 
 1. **Product** → **Run** (or `Cmd+R`)
-2. Start Flask backend in another terminal:
-   ```bash
-   cd /Users/erickhofer/Media-inventory-system
-   python -m flask run
-   ```
-3. App should launch and connect to `http://localhost:5000/api`
+2. Ensure `media_inventory.db` exists in project root (or let the app create one)
+3. App should launch and load data directly from local SQLite
 
 ## 🧪 Testing Checklist
 
@@ -121,7 +117,7 @@ MediaInventory/
 ├── Models/
 │   └── Models.swift                  ← Data structures
 ├── Services/
-│   ├── APIClient.swift               ← Backend communication
+│   ├── APIClient.swift               ← SQLite data access
 │   ├── NotificationManager.swift     ← System notifications
 │   └── SearchIndexer.swift           ← Spotlight search
 └── Views/
@@ -188,9 +184,9 @@ Reference [DEVELOPMENT.md](DEVELOPMENT.md) for step-by-step App Store submission
 - Verify Swift version: `swift --version`
 
 ### API connection fails
-- Ensure Flask is running: `python -m flask run`
-- Check API URL in `APIClient.swift`: `http://localhost:5000/api`
-- Look for errors in Xcode Console
+- Ensure `media_inventory.db` exists and is readable
+- Check database path resolution in `APIClient.swift`
+- Look for SQLite errors in Xcode Console/error panel
 
 ### Spotlight search not working
 - Add `com.apple.security.personal-information.search-index` capability
@@ -210,7 +206,7 @@ Reference [DEVELOPMENT.md](DEVELOPMENT.md) for step-by-step App Store submission
 
 You're now ready to:
 1. ✅ Build the macOS app
-2. ✅ Test locally with Flask backend
+2. ✅ Test locally with SQLite datastore
 3. ✅ Distribute via DMG
 4. ✅ Submit to Mac App Store
 

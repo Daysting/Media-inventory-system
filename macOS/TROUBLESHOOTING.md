@@ -93,51 +93,38 @@ struct MediaInventoryApp: App {
 }
 ```
 
-### API Connection Issues
+### Data Access Issues
 
-#### "Error: Cannot connect to 'localhost:5000'"
-**Problem**: Flask backend not running or wrong URL
+#### "Failed to initialize database"
+**Problem**: Database path cannot be resolved or opened
 
 **Solution**:
 ```bash
-# Terminal 1 - Start Flask
-cd /Users/erickhofer/Media-inventory-system
-source .venv/bin/activate
-python -m flask run
+# Verify database exists
+ls -lah /Users/erickhofer/Media-inventory-system/media_inventory.db
 
-# Terminal 2 - Check connection
-curl http://localhost:5000/api/books
-
-# In app console, check APIClient
-print(APIClient().baseURL)  // Should print: http://localhost:5000/api
+# Verify SQLite integrity
+sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"
 ```
 
-#### "SSL/TLS 'certificate_verify_failed'"
-**Problem**: SSL certificate validation failure (common in development)
+#### "database is locked"
+**Problem**: Another process is holding a write lock on SQLite
 
 **Solution**: 
-1. Use `http://` instead of `https://` for localhost
-2. For production HTTPS, add to `APIClient.swift`:
-   ```swift
-   let config = URLSessionConfiguration.default
-   config.waitsForConnectivity = true
-   let session = URLSession(configuration: config)
-   ```
+1. Close other apps/scripts using `media_inventory.db`
+2. Restart the macOS app
+3. Avoid concurrent write-heavy external tools against the same file
 
-#### Data not loading in app but works in browser
-**Problem**: CORS or API response format issue
+#### Data not loading in app
+**Problem**: SQLite schema mismatch or corrupt database
 
 **Solution**:
-1. Check API response format matches Model:
-   ```bash
-   curl http://localhost:5000/api/books | python -m json.tool
-   ```
-2. Compare with `Models.swift` - ensure CodingKey matches
-3. Add CORS headers to Flask:
-   ```python
-   from flask_cors import CORS
-   CORS(app)
-   ```
+1. Inspect tables:
+    ```bash
+    sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db ".tables"
+    ```
+2. Verify expected columns exist in `books`, `video_games`, `movies`, `borrowers`, `checkout_history`
+3. Let the app recreate missing tables on launch
 
 #### "JSONDecoder Error: The data couldn't be read"
 **Problem**: API returned unexpected format
@@ -352,8 +339,8 @@ Before reporting bugs:
 - [ ] All files added to build target
 - [ ] No compilation warnings
 - [ ] Console has no error messages
-- [ ] Flask backend running and accessible
-- [ ] API endpoint returns valid JSON
+- [ ] SQLite database is present and readable
+- [ ] `PRAGMA integrity_check;` returns `ok`
 - [ ] App tested on actual macOS (not just simulator)
 - [ ] All permissions granted (notifications, network)
 
@@ -361,7 +348,7 @@ Before reporting bugs:
 
 1. **Xcode Build Error**: Copy full error message from build log
 2. **Runtime Crash**: Share console output with full backtrace
-3. **API Issue**: Show curl response: `curl -v http://localhost:5000/api/books`
+3. **Data Issue**: Share output: `sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"`
 4. **UI Problem**: Share screenshot showing issue
 5. **Performance**: Share Activity Monitor output during the issue
 

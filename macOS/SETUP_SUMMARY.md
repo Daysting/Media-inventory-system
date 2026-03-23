@@ -32,12 +32,8 @@ Your Media Inventory System now has **everything needed** for a production-ready
 │   ├── TROUBLESHOOTING.md                   ✅ Common issues
 │   └── setup_xcode_project.sh               ✅ Setup helper
 │
-├── app.py                                   ← Flask backend
-├── system.py
-├── templates/
-│   └── index.html                           ← Web UI  
-├── static/
-└── ... (other backend files)
+├── media_inventory.db                        ← Local SQLite data
+└── ... (supporting project files)
 ```
 
 ## 🚀 Quick Start (Choose Your Path)
@@ -73,20 +69,13 @@ open /Users/erickhofer/Media-inventory-system/macOS/QUICKSTART.md
 
 ## 🧪 Start Testing
 
-### 1. Ensure Flask Backend is Running
+### 1. Ensure Local Database is Available
 
 ```bash
 cd /Users/erickhofer/Media-inventory-system
 
-# Activate virtual environment
-source .venv/bin/activate
-
-# Start Flask server
-python -m flask run
-
-# You should see:
-# * Running on http://localhost:5000
-# * Serving Flask app 'app'
+# Verify database file and tables
+sqlite3 media_inventory.db ".tables"
 ```
 
 ### 2. Build and Run macOS App
@@ -131,11 +120,8 @@ struct MediaInventoryApp: App {
 }
 ```
 
-### 3. API Endpoint
-In `APIClient.swift`, line ~20:
-```swift
-let baseURL = "http://localhost:5000/api"  // ← Change if needed
-```
+### 3. Data Path
+`APIClient.swift` resolves the SQLite path automatically and can be overridden with `MEDIA_INVENTORY_DB_PATH`.
 
 ### 4. Team ID (for App Store)
 In Xcode Build Settings:
@@ -157,10 +143,10 @@ In Xcode Build Settings:
 - ✅ Dark mode support
 - ✅ Native SwiftUI interface
 
-### Backend
-- ✅ REST API with Flask (`http://localhost:5000/api`)
-- ✅ SQLite database
-- ✅ CORS-enabled for web/app access
+### Data Layer
+- ✅ Native SQLite access in Swift (`APIClient.swift`)
+- ✅ No Python runtime dependency
+- ✅ Local, single-process desktop architecture
 
 ### Deployment
 - ✅ Mac App Store ready
@@ -174,7 +160,7 @@ In Xcode Build Settings:
 |--------|-------|
 | Total Swift Lines | ~1400 |
 | Number of Views | 7 |
-| API Endpoints | 12+ |
+| Data Access | Native SQLite |
 | Models | 6 data types |
 | Supported Items | 3 types (Books, Games, Movies) |
 | Minimum OS | macOS 13.0 |
@@ -185,7 +171,7 @@ In Xcode Build Settings:
 ### Immediate (This Week)
 1. ✅ Open Xcode project
 2. ✅ Build and test locally
-3. ✅ Verify API connection
+3. ✅ Verify local database access
 4. ✅ Test all UI features
 5. ✅ Plan any customizations
 
@@ -230,30 +216,30 @@ In Xcode Build Settings:
 │  └── CheckoutView                       │
 ├─────────────────────────────────────────┤
 │  Service Layer                          │
-│  ├── APIClient (HTTP Communication)     │
+│  ├── APIClient (SQLite Access)          │
 │  ├── NotificationManager                │
 │  └── SearchIndexer                      │
 ├─────────────────────────────────────────┤
 │  Data Layer                             │
 │  ├── Models (Codable Structs)           │
-│  └── API Response Types                 │
+│  └── Report/Data Types                  │
 ├─────────────────────────────────────────┤
 │  System Integration                     │
 │  ├── AppDelegate (Menu Bar, etc.)       │
 │  └── App Permissions                    │
 └─────────────────────────────────────────┘
-         ↓ REST API ↓
+         ↓ direct SQLite ↓
 ┌─────────────────────────────────────────┐
-│     Flask Backend (Python)              │
-│  ├── /api/books, /api/games, etc.       │
-│  ├── SQLite Database                    │
-│  └── Authentication Layer               │
+│     Local SQLite Database               │
+│  ├── books, video_games, movies         │
+│  ├── borrowers, checkout_history        │
+│  └── file: media_inventory.db           │
 └─────────────────────────────────────────┘
 ```
 
 ## 💡 Pro Tips
 
-1. **Local Development**: Keep Flask running in a terminal tab during development
+1. **Local Development**: Run the app directly, no separate backend process
 2. **Hot Reload**: Use Xcode's live preview for rapid UI iteration
 3. **Debugging**: Add breakpoints and use Console (Cmd+Shift+C) to debug
 4. **Testing**: Run tests frequently with Cmd+U
@@ -272,7 +258,7 @@ If you encounter issues:
 
 1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) first
 2. Run diagnostics in Xcode Console (Cmd+Shift+C)
-3. Verify Flask backend: `curl http://localhost:5000/api/books`
+3. Verify SQLite DB: `sqlite3 /Users/erickhofer/Media-inventory-system/media_inventory.db "PRAGMA integrity_check;"`
 4. Clean build: Cmd+Shift+K then rebuild
 
 ## ✅ Verification Checklist
@@ -282,7 +268,7 @@ Before moving to production:
 - [ ] Xcode project builds without errors
 - [ ] All 13 Swift files compile
 - [ ] App launches without crashes
-- [ ] Backend API connection successful
+- [ ] Local SQLite connection successful
 - [ ] Dashboard statistics display
 - [ ] Can add books/games/movies
 - [ ] Search and delete work

@@ -79,10 +79,10 @@ Your Media Inventory System is production-ready with all essential features. Thi
 - [ ] iCloud sync between devices
 - [ ] Barcode scanning with camera
 
-### Web Interface
-- [ ] Progressive Web App (PWA)
-- [ ] Mobile-responsive design
-- [ ] Real-time sync with app
+### macOS Focus (No Web Client)
+- [ ] Continue API-only local backend approach
+- [ ] Improve offline-first behavior in the macOS app
+- [ ] Expand macOS automation (Shortcuts/AppleScript)
 
 ## 🎯 Quick Wins (Can implement anytime)
 
