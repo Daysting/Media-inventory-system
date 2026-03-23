@@ -26,5 +26,24 @@ struct MediaInventoryApp: App {
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             }
         }
+
+        Settings {
+            AppSettingsView()
+        }
+    }
+}
+
+private struct AppSettingsView: View {
+    @AppStorage("EnableDebugSpotlightIndexing") private var enableDebugSpotlightIndexing = false
+
+    var body: some View {
+        Form {
+            Toggle("Enable Spotlight indexing in Debug builds", isOn: $enableDebugSpotlightIndexing)
+            Text("When enabled, the app will index items in Spotlight during Debug runs.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(20)
+        .frame(width: 460)
     }
 }

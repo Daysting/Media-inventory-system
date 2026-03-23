@@ -15,7 +15,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         emitDiagnostic("Local mode enabled: using native SQLite datastore")
         setupMenuBar()
         setupNotificationManager()
-        setupSpotlightIntegration()
+        if shouldEnableSpotlightIndexing() {
+            setupSpotlightIntegration()
+        } else {
+            emitDiagnostic("Skipping Spotlight indexing in Debug build (toggle in Settings > Preferences)")
+        }
     }
 
     private func configureApplicationIcon() {
@@ -49,7 +53,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func showBooks() {}
     @objc private func showGames() {}
     @objc private func showMovies() {}
-    @objc private func showPreferences() {}
+    @objc private func showPreferences() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    }
 
     // MARK: - Notifications
     private func setupNotificationManager() {
@@ -86,4 +92,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
+
+    private func shouldEnableSpotlightIndexing() -> Bool {
+#if DEBUG
+        return UserDefaults.standard.bool(forKey: "EnableDebugSpotlightIndexing")
+#else
+        return true
+#endif
+    }
 }

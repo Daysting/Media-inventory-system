@@ -3,14 +3,31 @@ import UserNotifications
 
 class NotificationManager {
     func requestUserPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Notification permission error: \(error.localizedDescription)")
-                return
-            }
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                    if let nsError = error as NSError? {
+                        if nsError.domain == UNErrorDomain,
+                           nsError.code == UNError.notificationsNotAllowed.rawValue {
+                            print("Notifications are disabled for this app in System Settings.")
+                            return
+                        }
+                        print("Notification permission error: \(nsError.localizedDescription)")
+                        return
+                    }
 
-            if !granted {
-                print("Notification permission was not granted")
+                    if !granted {
+                        print("Notification permission was not granted")
+                    }
+                }
+            case .denied:
+                print("Notifications are disabled for this app in System Settings.")
+            case .authorized, .provisional, .ephemeral:
+                break
+            @unknown default:
+                break
             }
         }
     }
@@ -40,21 +57,28 @@ class NotificationManager {
     }
 
     private func scheduleNotification(title: String, subtitle: String, body: String) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.subtitle = subtitle
-        content.body = body
-        content.sound = .default
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                return
+            }
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.subtitle = subtitle
+            content.body = body
+            content.sound = .default
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Failed to schedule notification: \(error.localizedDescription)")
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: nil
+            )
+
+            center.add(request) { error in
+                if let error = error {
+                    print("Failed to schedule notification: \(error.localizedDescription)")
+                }
             }
         }
     }
