@@ -42,6 +42,7 @@ class APIClient: ObservableObject {
     init() {
         do {
             try ensureDatabaseInitialized()
+            migrateExistingRemoteImagesToLocalCache()
         } catch {
             errorMessage = "Failed to initialize database: \(error.localizedDescription)"
         }
@@ -95,6 +96,7 @@ class APIClient: ObservableObject {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319721", digits: 8, table: "books", db: db)
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "books", mediaID: id)
                 let sql = """
                 INSERT INTO books (id, title, author, year_published, publisher, fiction_nonfiction, genre, description, image_url, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'owned')
@@ -110,7 +112,7 @@ class APIClient: ObservableObject {
                 self.bindOptionalText(stmt, 6, fictionNonfiction)
                 self.bindOptionalText(stmt, 7, genre)
                 self.bindOptionalText(stmt, 8, description)
-                self.bindOptionalText(stmt, 9, imageUrl)
+                self.bindOptionalText(stmt, 9, cachedImageUrl)
                 try self.require(sqlite3_step(stmt) == SQLITE_DONE, db: db)
             }
             DispatchQueue.main.async { self.fetchBooks() }
@@ -140,6 +142,7 @@ class APIClient: ObservableObject {
                     description: String?, imageUrl: String?) {
         runAsync {
             try self.withDatabase { db in
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "books", mediaID: id)
                 let sql = """
                 UPDATE books
                 SET title = ?, author = ?, year_published = ?, publisher = ?, fiction_nonfiction = ?, genre = ?, description = ?, image_url = ?
@@ -153,7 +156,7 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 5, fictionNonfiction)
                     self.bindOptionalText(stmt, 6, genre)
                     self.bindOptionalText(stmt, 7, description)
-                    self.bindOptionalText(stmt, 8, imageUrl)
+                    self.bindOptionalText(stmt, 8, cachedImageUrl)
                     self.bindText(stmt, 9, id)
                 })
             }
@@ -213,6 +216,7 @@ class APIClient: ObservableObject {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319722", digits: 8, table: "video_games", db: db)
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "video_games", mediaID: id)
                 let sql = """
                 INSERT INTO video_games (id, title, game_system, genre, year_released, image_url, status)
                 VALUES (?, ?, ?, ?, ?, ?, 'owned')
@@ -223,7 +227,7 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 3, gameSystem)
                     self.bindOptionalText(stmt, 4, genre)
                     self.bindOptionalInt(stmt, 5, yearReleased)
-                    self.bindOptionalText(stmt, 6, imageUrl)
+                    self.bindOptionalText(stmt, 6, cachedImageUrl)
                 })
             }
             DispatchQueue.main.async { self.fetchGames() }
@@ -252,6 +256,7 @@ class APIClient: ObservableObject {
                     yearReleased: Int?, imageUrl: String?) {
         runAsync {
             try self.withDatabase { db in
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "video_games", mediaID: id)
                 let sql = """
                 UPDATE video_games
                 SET title = ?, game_system = ?, genre = ?, year_released = ?, image_url = ?
@@ -262,7 +267,7 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 2, platform)
                     self.bindOptionalText(stmt, 3, genre)
                     self.bindOptionalInt(stmt, 4, yearReleased)
-                    self.bindOptionalText(stmt, 5, imageUrl)
+                    self.bindOptionalText(stmt, 5, cachedImageUrl)
                     self.bindText(stmt, 6, id)
                 })
             }
@@ -321,6 +326,7 @@ class APIClient: ObservableObject {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319723", digits: 8, table: "movies", db: db)
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "movies", mediaID: id)
                 let sql = """
                 INSERT INTO movies (id, title, director, "cast", year_released, studio, genre, format, image_url, status)
                 VALUES (?, ?, ?, NULL, ?, NULL, ?, ?, ?, 'owned')
@@ -332,7 +338,7 @@ class APIClient: ObservableObject {
                     self.bindOptionalInt(stmt, 4, yearReleased)
                     self.bindOptionalText(stmt, 5, genre)
                     self.bindOptionalText(stmt, 6, rating)
-                    self.bindOptionalText(stmt, 7, imageUrl)
+                    self.bindOptionalText(stmt, 7, cachedImageUrl)
                 })
             }
             DispatchQueue.main.async { self.fetchMovies() }
@@ -362,6 +368,7 @@ class APIClient: ObservableObject {
                      rating: String?, imageUrl: String?) {
         runAsync {
             try self.withDatabase { db in
+                let cachedImageUrl = self.cacheImageIfNeeded(imageUrl, mediaType: "movies", mediaID: id)
                 let sql = """
                 UPDATE movies
                 SET title = ?, director = ?, "cast" = ?, year_released = ?, studio = ?, genre = ?, format = ?, image_url = ?
@@ -375,7 +382,7 @@ class APIClient: ObservableObject {
                     self.bindOptionalText(stmt, 5, studio)
                     self.bindOptionalText(stmt, 6, genre)
                     self.bindOptionalText(stmt, 7, rating)
-                    self.bindOptionalText(stmt, 8, imageUrl)
+                    self.bindOptionalText(stmt, 8, cachedImageUrl)
                     self.bindText(stmt, 9, id)
                 })
             }
@@ -1074,5 +1081,125 @@ class APIClient: ObservableObject {
                 )
             """)
         }
+    }
+
+    private func migrateExistingRemoteImagesToLocalCache() {
+        runAsync {
+            try self.withDatabase { db in
+                try self.migrateRemoteImages(in: "books", db: db)
+                try self.migrateRemoteImages(in: "video_games", db: db)
+                try self.migrateRemoteImages(in: "movies", db: db)
+            }
+        } onError: { _ in }
+    }
+
+    private func migrateRemoteImages(in table: String, db: OpaquePointer?) throws {
+        let selectSQL = "SELECT id, image_url FROM \(table) WHERE image_url LIKE 'http://%' OR image_url LIKE 'https://%'"
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        try require(sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nil) == SQLITE_OK, db: db)
+
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let mediaID = columnText(stmt, 0), let remote = columnText(stmt, 1) else { continue }
+            guard let local = cacheImageIfNeeded(remote, mediaType: table, mediaID: mediaID), local != remote else { continue }
+
+            try execute(db, sql: "UPDATE \(table) SET image_url = ? WHERE id = ?", bind: { updateStmt in
+                self.bindText(updateStmt, 1, local)
+                self.bindText(updateStmt, 2, mediaID)
+            })
+        }
+    }
+
+    private func cacheImageIfNeeded(_ rawImageValue: String?, mediaType: String, mediaID: String) -> String? {
+        guard let rawImageValue else { return nil }
+        let value = rawImageValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        if let url = URL(string: value), let scheme = url.scheme?.lowercased() {
+            switch scheme {
+            case "http", "https":
+                do {
+                    let localURL = try downloadImageToCache(sourceURL: url, mediaType: mediaType, mediaID: mediaID)
+                    return localURL.absoluteString
+                } catch {
+                    DispatchQueue.main.async {
+                        self.errorMessage = "Unable to cache image for offline use: \(error.localizedDescription)"
+                    }
+                    return nil
+                }
+            case "file":
+                do {
+                    let localURL = try copyImageToCache(sourceURL: url, mediaType: mediaType, mediaID: mediaID)
+                    return localURL.absoluteString
+                } catch {
+                    return value
+                }
+            default:
+                return value
+            }
+        }
+
+        let expandedPath = (value as NSString).expandingTildeInPath
+        guard FileManager.default.fileExists(atPath: expandedPath) else { return nil }
+
+        do {
+            let localURL = try copyImageToCache(sourceURL: URL(fileURLWithPath: expandedPath), mediaType: mediaType, mediaID: mediaID)
+            return localURL.absoluteString
+        } catch {
+            return value
+        }
+    }
+
+    private func downloadImageToCache(sourceURL: URL, mediaType: String, mediaID: String) throws -> URL {
+        let data = try Data(contentsOf: sourceURL)
+        let ext = preferredImageExtension(sourceURL: sourceURL, data: data)
+        let destinationURL = try cachedImageURL(mediaType: mediaType, mediaID: mediaID, fileExtension: ext)
+        try data.write(to: destinationURL, options: .atomic)
+        return destinationURL
+    }
+
+    private func copyImageToCache(sourceURL: URL, mediaType: String, mediaID: String) throws -> URL {
+        let fileManager = FileManager.default
+        let ext = preferredImageExtension(sourceURL: sourceURL, data: nil)
+        let destinationURL = try cachedImageURL(mediaType: mediaType, mediaID: mediaID, fileExtension: ext)
+
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+
+        try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        return destinationURL
+    }
+
+    private func cachedImageURL(mediaType: String, mediaID: String, fileExtension: String) throws -> URL {
+        let fileManager = FileManager.default
+        let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let imageDir = appSupport
+            .appendingPathComponent("MediaInventory", isDirectory: true)
+            .appendingPathComponent("images", isDirectory: true)
+            .appendingPathComponent(mediaType, isDirectory: true)
+        try fileManager.createDirectory(at: imageDir, withIntermediateDirectories: true)
+
+        let safeExt = fileExtension.isEmpty ? "jpg" : fileExtension
+        return imageDir.appendingPathComponent("\(mediaID).\(safeExt)", isDirectory: false)
+    }
+
+    private func preferredImageExtension(sourceURL: URL, data: Data?) -> String {
+        let pathExt = sourceURL.pathExtension.lowercased()
+        if ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tif", "tiff", "bmp"].contains(pathExt) {
+            return pathExt
+        }
+
+        guard let data else { return "jpg" }
+
+        if data.starts(with: [0x89, 0x50, 0x4E, 0x47]) { return "png" }
+        if data.starts(with: [0xFF, 0xD8, 0xFF]) { return "jpg" }
+        if data.starts(with: [0x47, 0x49, 0x46, 0x38]) { return "gif" }
+        if data.starts(with: [0x52, 0x49, 0x46, 0x46]) && data.count > 12 {
+            let webpSignature = Data([0x57, 0x45, 0x42, 0x50])
+            if data.subdata(in: 8..<12) == webpSignature { return "webp" }
+        }
+
+        return "jpg"
     }
 }

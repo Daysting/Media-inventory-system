@@ -113,7 +113,7 @@ struct AddBookForm: View {
                 }
                 
                 Section("Image") {
-                    TextField("Image URL", text: $imageUrl)
+                    TextField("Image URL or File Path", text: $imageUrl)
                 }
             }
             
@@ -329,7 +329,7 @@ struct EditBookForm: View {
                 }
 
                 Section("Image") {
-                    TextField("Image URL", text: $imageUrl)
+                    TextField("Image URL or File Path", text: $imageUrl)
                 }
             }
 

@@ -107,7 +107,7 @@ struct AddMovieForm: View {
                 }
                 
                 Section("Image") {
-                    TextField("Image URL", text: $imageUrl)
+                    TextField("Image URL or File Path", text: $imageUrl)
                 }
             }
             
@@ -190,7 +190,7 @@ struct EditMovieForm: View {
                 }
 
                 Section("Image") {
-                    TextField("Image URL", text: $imageUrl)
+                    TextField("Image URL or File Path", text: $imageUrl)
                 }
             }
 
