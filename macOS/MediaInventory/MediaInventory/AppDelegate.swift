@@ -98,10 +98,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private func shouldEnableSpotlightIndexing() -> Bool {
-#if DEBUG
-        return UserDefaults.standard.bool(forKey: "EnableDebugSpotlightIndexing")
-#else
-        return true
-#endif
+        UserDefaults.standard.bool(forKey: "EnableDebugSpotlightIndexing")
     }
 }

@@ -80,6 +80,8 @@ struct ReportsView: View {
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .padding(20)
                 }
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
             } else {
                 Group {
                     switch selectedReport {

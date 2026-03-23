@@ -1,5 +1,15 @@
 import SwiftUI
 
+private enum PrintPalette {
+    static let pageBackground = Color.white
+    static let primaryText = Color.black
+    static let secondaryText = Color(nsColor: .darkGray)
+    static let headerBackground = Color(white: 0.90)
+    static let altRowBackground = Color(white: 0.97)
+    static let border = Color(white: 0.78)
+    static let divider = Color.gray
+}
+
 // MARK: - Print Page Wrapper
 
 /// Wraps any report content with a standard header for printing.
@@ -13,19 +23,22 @@ struct PrintReportPage: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Daysting's Home Inventory System")
                     .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(PrintPalette.primaryText)
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(PrintPalette.secondaryText)
                 Text("Generated: \(Self.dateFmt.string(from: generatedAt))")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(PrintPalette.secondaryText)
             }
             Divider()
             content
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(36)
-        .background(Color.white)
+        .foregroundColor(PrintPalette.primaryText)
+        .background(PrintPalette.pageBackground)
+        .environment(\.colorScheme, .light)
     }
 
     private static let dateFmt: DateFormatter = {
@@ -55,30 +68,32 @@ struct PrintTable: View {
                 ForEach(Array(columns.enumerated()), id: \.offset) { _, col in
                     Text(col.title)
                         .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(PrintPalette.primaryText)
                         .frame(maxWidth: col.width ?? .infinity, alignment: col.align)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 6)
-                        .background(Color(white: 0.90))
+                        .background(PrintPalette.headerBackground)
                 }
             }
-            Divider().background(Color.gray)
+            Divider().background(PrintPalette.divider)
 
             // Data rows
             if rows.isEmpty {
                 HStack {
                     Text("No data")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(PrintPalette.secondaryText)
                         .padding(12)
                     Spacer()
                 }
-                .background(Color.white)
+                .background(PrintPalette.pageBackground)
             } else {
                 ForEach(Array(rows.enumerated()), id: \.offset) { rowIdx, row in
                     HStack(spacing: 0) {
                         ForEach(Array(row.enumerated()), id: \.offset) { colIdx, cell in
                             Text(cell)
                                 .font(.system(size: 10))
+                                .foregroundColor(PrintPalette.primaryText)
                                 .lineLimit(3)
                                 .frame(maxWidth: columns[safeIdx: colIdx]?.width ?? .infinity,
                                        alignment: columns[safeIdx: colIdx]?.align ?? .leading)
@@ -86,12 +101,12 @@ struct PrintTable: View {
                                 .padding(.vertical, 5)
                         }
                     }
-                    .background(rowIdx % 2 == 0 ? Color.white : Color(white: 0.97))
+                    .background(rowIdx % 2 == 0 ? PrintPalette.pageBackground : PrintPalette.altRowBackground)
                     Divider().opacity(0.35)
                 }
             }
         }
-        .overlay(Rectangle().stroke(Color(white: 0.78), lineWidth: 0.5))
+        .overlay(Rectangle().stroke(PrintPalette.border, lineWidth: 0.5))
     }
 }
 
@@ -144,7 +159,7 @@ struct PrintableInventorySummary: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(PrintPalette.secondaryText)
                 .textCase(.uppercase)
                 .tracking(0.8)
             content()
@@ -425,7 +440,7 @@ struct PrintableGenreReport: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(PrintPalette.secondaryText)
                 .textCase(.uppercase)
                 .tracking(0.8)
             PrintTable(
