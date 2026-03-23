@@ -39,33 +39,40 @@ struct BorrowersView: View {
             .cornerRadius(8)
             .padding(20)
             
-            Table(apiClient.borrowers) {
-                TableColumn("Name", value: \.fullName)
-                TableColumn("Email") { borrower in
-                    Text(borrower.email ?? "-")
-                }
-                TableColumn("Phone") { borrower in
-                    Text(borrower.phoneNumber ?? "-")
-                }
-                TableColumn("Address") { borrower in
-                    Text(borrower.address ?? "-")
-                }
-                TableColumn("") { borrower in
-                    HStack(spacing: 8) {
-                        Button(action: { borrowerToEdit = borrower }) {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 14))
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        Button(action: { apiClient.deleteBorrower(id: borrower.id) }) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 14))
-                        }
-                        .buttonStyle(PlainButtonStyle())
+            if apiClient.borrowers.isEmpty {
+                Text("No borrowers yet")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 20)
+            } else {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        Text("Name").font(.system(size: 12, weight: .semibold)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Email").font(.system(size: 12, weight: .semibold)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Phone").font(.system(size: 12, weight: .semibold)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Address").font(.system(size: 12, weight: .semibold)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Actions").font(.system(size: 12, weight: .semibold)).frame(width: 80, alignment: .trailing)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(nsColor: NSColor.controlBackgroundColor))
+
+                    ForEach(apiClient.borrowers) { borrower in
+                        BorrowerRow(
+                            borrower: borrower,
+                            onEdit: { borrowerToEdit = borrower },
+                            onDelete: { apiClient.deleteBorrower(id: borrower.id) }
+                        )
                     }
                 }
+                .background(Color(nsColor: NSColor.windowBackgroundColor))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                .padding(20)
             }
-            .padding(20)
             
             Spacer()
         }
@@ -134,6 +141,56 @@ struct AddBorrowerForm: View {
         }
         .padding(20)
         .frame(minWidth: 400, minHeight: 400)
+    }
+}
+
+private struct BorrowerRow: View {
+    let borrower: Borrower
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Text(borrower.fullName)
+                    .font(.system(size: 13))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(borrower.email ?? "-")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(borrower.phoneNumber ?? "-")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(borrower.address ?? "-")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 8) {
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 13))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .frame(width: 80, alignment: .trailing)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+
+            Divider()
+        }
     }
 }
 
