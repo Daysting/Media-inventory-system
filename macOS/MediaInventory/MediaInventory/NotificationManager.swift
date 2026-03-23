@@ -2,32 +2,24 @@ import Cocoa
 import UserNotifications
 
 class NotificationManager {
-    func requestUserPermission() {
+    /// Request notification permission only when there is something to actually send.
+    /// Do NOT call this eagerly on app launch — doing so triggers an IPC round-trip to
+    /// usernoted even when the user has denied notifications, which produces annoying
+    /// kernel-level port errors in the console.
+    private func requestPermissionIfNeeded(then completion: @escaping (Bool) -> Void) {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                completion(true)
             case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound]) { granted, error in
-                    if let nsError = error as NSError? {
-                        if nsError.domain == UNErrorDomain,
-                           nsError.code == UNError.notificationsNotAllowed.rawValue {
-                            print("Notifications are disabled for this app in System Settings.")
-                            return
-                        }
-                        print("Notification permission error: \(nsError.localizedDescription)")
-                        return
-                    }
-
-                    if !granted {
-                        print("Notification permission was not granted")
-                    }
+                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    completion(granted)
                 }
             case .denied:
-                print("Notifications are disabled for this app in System Settings.")
-            case .authorized, .provisional, .ephemeral:
-                break
+                completion(false)
             @unknown default:
-                break
+                completion(false)
             }
         }
     }
@@ -57,12 +49,10 @@ class NotificationManager {
     }
 
     private func scheduleNotification(title: String, subtitle: String, body: String) {
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
-            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-                return
-            }
+        requestPermissionIfNeeded { granted in
+            guard granted else { return }
 
+            let center = UNUserNotificationCenter.current()
             let content = UNMutableNotificationContent()
             content.title = title
             content.subtitle = subtitle

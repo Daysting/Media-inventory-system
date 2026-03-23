@@ -60,9 +60,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Notifications
+    // NotificationManager is instantiated here but permission is NOT requested eagerly.
+    // The manager will request permission the first time a notification needs to be sent,
+    // which avoids triggering IPC with usernoted on every launch.
     private func setupNotificationManager() {
         notificationManager = NotificationManager()
-        notificationManager?.requestUserPermission()
     }
 
     // MARK: - Spotlight Integration
