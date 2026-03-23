@@ -114,16 +114,39 @@ class APIClient: ObservableObject {
     // MARK: - Movies
     func fetchMovies() {
         isLoading = true
-        fetch(endpoint: "/movies", responseType: MoviesResponse.self) { [weak self] result in
-            switch result {
-            case .success(let response):
-                self?.movies = response.movies
-                self?.isLoading = false
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
-                self?.isLoading = false
-            }
+        guard let url = URL(string: baseURL + "/movies") else {
+            errorMessage = URLError(.badURL).localizedDescription
+            isLoading = false
+            return
         }
+
+        session.dataTask(with: url) { [weak self] data, _, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+
+                if let error {
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
+                    return
+                }
+
+                guard let data else {
+                    self.errorMessage = URLError(.zeroByteResource).localizedDescription
+                    self.isLoading = false
+                    return
+                }
+
+                do {
+                    let parsedMovies = try self.parseMoviesResponse(data: data)
+                    self.movies = parsedMovies
+                    self.isLoading = false
+                } catch {
+                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
+                    self.errorMessage = "Failed to decode /movies: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                    self.isLoading = false
+                }
+            }
+        }.resume()
     }
     
     func addMovie(title: String, director: String?, yearReleased: Int?, genre: String?,
@@ -363,6 +386,43 @@ class APIClient: ObservableObject {
         }
     }
 
+    private func parseMoviesResponse(data: Data) throws -> [Movie] {
+        let jsonObject = try JSONSerialization.jsonObject(with: data)
+        guard let root = jsonObject as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+
+        let rawMovies = root["movies"] as? [[String: Any]] ?? []
+
+        return rawMovies.map { item in
+            let id = stringValue(item["id"]) ?? UUID().uuidString
+            let title = stringValue(item["title"]) ?? "Untitled"
+            let director = stringValue(item["director"])
+            let cast = stringValue(item["cast"])
+            let yearReleased = intValue(item["year_released"])
+            let studio = stringValue(item["studio"])
+            let genre = stringValue(item["genre"])
+            let rating = stringValue(item["rating"]) ?? stringValue(item["format"])
+            let runtimeMinutes = intValue(item["runtime_minutes"])
+            let imageUrl = stringValue(item["image_url"])
+            let status = stringValue(item["status"]) ?? "owned"
+
+            return Movie(
+                id: id,
+                title: title,
+                director: director,
+                cast: cast,
+                yearReleased: yearReleased,
+                studio: studio,
+                genre: genre,
+                rating: rating,
+                runtimeMinutes: runtimeMinutes,
+                imageUrl: imageUrl,
+                status: status
+            )
+        }
+    }
+
     private func stringValue(_ value: Any?) -> String? {
         guard let value else { return nil }
         if value is NSNull { return nil }
@@ -370,6 +430,17 @@ class APIClient: ObservableObject {
         if let int = value as? Int { return String(int) }
         if let double = value as? Double { return String(double) }
         if let bool = value as? Bool { return String(bool) }
+        return nil
+    }
+
+    private func intValue(_ value: Any?) -> Int? {
+        guard let value else { return nil }
+        if value is NSNull { return nil }
+        if let int = value as? Int { return int }
+        if let double = value as? Double { return Int(double) }
+        if let string = value as? String {
+            return Int(string.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
         return nil
     }
 }

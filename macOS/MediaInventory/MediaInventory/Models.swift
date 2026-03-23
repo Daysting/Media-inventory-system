@@ -110,6 +110,20 @@ struct Movie: Identifiable, Codable {
         case status
     }
 
+    init(id: String, title: String, director: String?, cast: String?, yearReleased: Int?, studio: String?, genre: String?, rating: String?, runtimeMinutes: Int?, imageUrl: String?, status: String) {
+        self.id = id
+        self.title = title
+        self.director = director
+        self.cast = cast
+        self.yearReleased = yearReleased
+        self.studio = studio
+        self.genre = genre
+        self.rating = rating
+        self.runtimeMinutes = runtimeMinutes
+        self.imageUrl = imageUrl
+        self.status = status
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = container.decodeFlexibleID(forKey: .id)
