@@ -144,6 +144,15 @@ struct Borrower: Identifiable, Codable {
         case email
     }
 
+    init(id: String, firstName: String, lastName: String, address: String?, phoneNumber: String?, email: String?) {
+        self.id = id
+        self.firstName = firstName
+        self.lastName = lastName
+        self.address = address
+        self.phoneNumber = phoneNumber
+        self.email = email
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = container.decodeFlexibleID(forKey: .id)

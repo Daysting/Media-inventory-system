@@ -162,16 +162,39 @@ class APIClient: ObservableObject {
     // MARK: - Borrowers
     func fetchBorrowers() {
         isLoading = true
-        fetch(endpoint: "/borrowers", responseType: BorrowersResponse.self) { [weak self] result in
-            switch result {
-            case .success(let response):
-                self?.borrowers = response.borrowers
-                self?.isLoading = false
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
-                self?.isLoading = false
-            }
+        guard let url = URL(string: baseURL + "/borrowers") else {
+            errorMessage = URLError(.badURL).localizedDescription
+            isLoading = false
+            return
         }
+
+        session.dataTask(with: url) { [weak self] data, _, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+
+                if let error {
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
+                    return
+                }
+
+                guard let data else {
+                    self.errorMessage = URLError(.zeroByteResource).localizedDescription
+                    self.isLoading = false
+                    return
+                }
+
+                do {
+                    let parsedBorrowers = try self.parseBorrowersResponse(data: data)
+                    self.borrowers = parsedBorrowers
+                    self.isLoading = false
+                } catch {
+                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
+                    self.errorMessage = "Failed to decode /borrowers: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                    self.isLoading = false
+                }
+            }
+        }.resume()
     }
     
     func addBorrower(firstName: String, lastName: String, address: String?, phoneNumber: String?, email: String?) {
@@ -311,5 +334,42 @@ class APIClient: ObservableObject {
                 }
             }
         }.resume()
+    }
+
+    private func parseBorrowersResponse(data: Data) throws -> [Borrower] {
+        let jsonObject = try JSONSerialization.jsonObject(with: data)
+        guard let root = jsonObject as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+
+        let rawBorrowers = root["borrowers"] as? [[String: Any]] ?? []
+
+        return rawBorrowers.map { item in
+            let id = stringValue(item["id"]) ?? UUID().uuidString
+            let firstName = stringValue(item["first_name"]) ?? "Unknown"
+            let lastName = stringValue(item["last_name"]) ?? "Borrower"
+            let address = stringValue(item["address"])
+            let phoneNumber = stringValue(item["phone_number"])
+            let email = stringValue(item["email"])
+
+            return Borrower(
+                id: id,
+                firstName: firstName,
+                lastName: lastName,
+                address: address,
+                phoneNumber: phoneNumber,
+                email: email
+            )
+        }
+    }
+
+    private func stringValue(_ value: Any?) -> String? {
+        guard let value else { return nil }
+        if value is NSNull { return nil }
+        if let string = value as? String { return string }
+        if let int = value as? Int { return String(int) }
+        if let double = value as? Double { return String(double) }
+        if let bool = value as? Bool { return String(bool) }
+        return nil
     }
 }
