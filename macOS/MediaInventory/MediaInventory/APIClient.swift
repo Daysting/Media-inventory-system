@@ -227,7 +227,16 @@ class APIClient: ObservableObject {
                     let decoded = try JSONDecoder().decode(T.self, from: data)
                     completion(.success(decoded))
                 } catch {
-                    completion(.failure(error))
+                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
+                    let snippet = String(payload.prefix(500))
+                    let detailedError = NSError(
+                        domain: "APIClient.Decoding",
+                        code: 1001,
+                        userInfo: [
+                            NSLocalizedDescriptionKey: "Failed to decode \(endpoint): \(error.localizedDescription)\nPayload: \(snippet)"
+                        ]
+                    )
+                    completion(.failure(detailedError))
                 }
             }
         }.resume()

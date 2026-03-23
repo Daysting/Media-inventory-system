@@ -28,7 +28,7 @@ def get_books():
             'success': True,
             'books': [
                 {
-                    'id': book[0],
+                    'id': str(book[0]) if book[0] not in (None, '') else f"legacy-book-{index + 1}",
                     'title': book[1],
                     'author': book[2],
                     'year_published': book[3],
@@ -39,7 +39,7 @@ def get_books():
                     'image_url': book[8],
                     'status': book[9]
                 }
-                for book in books
+                for index, book in enumerate(books)
             ]
         })
     except Exception as e:
@@ -104,7 +104,7 @@ def get_video_games():
             'success': True,
             'games': [
                 {
-                    'id': game[0],
+                    'id': str(game[0]) if game[0] not in (None, '') else f"legacy-game-{index + 1}",
                     'title': game[1],
                     'game_system': game[2],
                     'developer': game[2],
@@ -116,7 +116,7 @@ def get_video_games():
                     'image_url': game[5],
                     'status': game[6]
                 }
-                for game in games
+                for index, game in enumerate(games)
             ]
         })
     except Exception as e:
@@ -177,7 +177,7 @@ def get_movies():
             'success': True,
             'movies': [
                 {
-                    'id': movie[0],
+                    'id': str(movie[0]) if movie[0] not in (None, '') else f"legacy-movie-{index + 1}",
                     'title': movie[1],
                     'director': movie[2],
                     'cast': movie[3],
@@ -190,7 +190,7 @@ def get_movies():
                     'image_url': movie[8],
                     'status': movie[9]
                 }
-                for movie in movies
+                for index, movie in enumerate(movies)
             ]
         })
     except Exception as e:
@@ -257,14 +257,14 @@ def get_borrowers():
             'success': True,
             'borrowers': [
                 {
-                    'id': borrower[0],
+                    'id': str(borrower[0]) if borrower[0] not in (None, '') else f"legacy-borrower-{index + 1}",
                     'first_name': borrower[1],
                     'last_name': borrower[2],
                     'address': borrower[3],
                     'phone_number': borrower[4],
                     'email': None
                 }
-                for borrower in borrowers
+                for index, borrower in enumerate(borrowers)
             ]
         })
     except Exception as e:
