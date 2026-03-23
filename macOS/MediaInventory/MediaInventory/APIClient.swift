@@ -279,7 +279,7 @@ class APIClient: ObservableObject {
             var results: [Movie] = []
             try self.withDatabase { db in
                 let sql = """
-                SELECT id, title, director, cast, year_released, studio, genre, format, image_url, status
+                SELECT id, title, director, "cast", year_released, studio, genre, format, image_url, status
                 FROM movies
                 ORDER BY title
                 """
@@ -322,7 +322,7 @@ class APIClient: ObservableObject {
             try self.withDatabase { db in
                 let id = try self.generateMediaID(prefix: "319723", digits: 8, table: "movies", db: db)
                 let sql = """
-                INSERT INTO movies (id, title, director, cast, year_released, studio, genre, format, image_url, status)
+                INSERT INTO movies (id, title, director, "cast", year_released, studio, genre, format, image_url, status)
                 VALUES (?, ?, ?, NULL, ?, NULL, ?, ?, ?, 'owned')
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
@@ -364,7 +364,7 @@ class APIClient: ObservableObject {
             try self.withDatabase { db in
                 let sql = """
                 UPDATE movies
-                SET title = ?, director = ?, cast = ?, year_released = ?, studio = ?, genre = ?, format = ?, image_url = ?
+                SET title = ?, director = ?, "cast" = ?, year_released = ?, studio = ?, genre = ?, format = ?, image_url = ?
                 WHERE id = ?
                 """
                 try self.execute(db, sql: sql, bind: { stmt in
@@ -1042,7 +1042,7 @@ class APIClient: ObservableObject {
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
                     director TEXT,
-                    cast TEXT,
+                    "cast" TEXT,
                     year_released INTEGER,
                     studio TEXT,
                     genre TEXT,
