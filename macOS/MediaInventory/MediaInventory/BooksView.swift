@@ -41,8 +41,12 @@ struct BooksView: View {
             // Books Table
             Table(filteredBooks) {
                 TableColumn("Title", value: \.title)
-                TableColumn("Author", value: \.author ?? "-")
-                TableColumn("Genre", value: \.genre ?? "-")
+                TableColumn("Author") { book in
+                    Text(book.author ?? "-")
+                }
+                TableColumn("Genre") { book in
+                    Text(book.genre ?? "-")
+                }
                 TableColumn("Year") { book in
                     Text(String(book.yearPublished ?? 0))
                 }
