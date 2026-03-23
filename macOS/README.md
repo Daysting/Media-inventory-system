@@ -49,6 +49,21 @@ MediaInventory/
 
 ## Getting Started
 
+### 0. Install Wizard (Fastest)
+
+From the repository root, run:
+
+```bash
+./install_wizard_macos.sh
+```
+
+The wizard will:
+- Check macOS, Python, and Xcode command-line tools
+- Create or reuse `.venv`
+- Install required Python dependencies
+- Create (or optionally recreate) `media_inventory.db`
+- Optionally open Xcode and start the Flask server
+
 ### 1. Development Setup
 
 ```bash
