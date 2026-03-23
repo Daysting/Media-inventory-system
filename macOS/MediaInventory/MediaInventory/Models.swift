@@ -243,15 +243,15 @@ private extension KeyedDecodingContainer {
             return stringValue
         }
 
-        if let intValue = try? decodeIfPresent(Int.self, forKey: key), let intValue {
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key) {
             return String(intValue)
         }
 
-        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key), let doubleValue {
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key) {
             return String(doubleValue)
         }
 
-        if let boolValue = try? decodeIfPresent(Bool.self, forKey: key), let boolValue {
+        if let boolValue = try? decodeIfPresent(Bool.self, forKey: key) {
             return String(boolValue)
         }
 
