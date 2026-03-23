@@ -29,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "book.fill", accessibilityDescription: "Media Inventory")
+            button.image = NSImage(systemSymbolName: "book.fill", accessibilityDescription: "Daysting's Home Inventory System")
             button.imagePosition = .imageLeading
         }
 
