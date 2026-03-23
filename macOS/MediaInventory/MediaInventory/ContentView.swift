@@ -4,6 +4,8 @@ struct ContentView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var selectedTab: Tab = .dashboard
     private let errorPanelHeight: CGFloat = 120
+    @State private var hasBootstrapped = false
+    @State private var isBootstrappingConnection = false
     
     enum Tab {
         case dashboard, books, games, movies, borrowers, checkout, reports, diagnostics
@@ -131,6 +133,20 @@ struct ContentView: View {
                 .background(Color(nsColor: NSColor.controlBackgroundColor))
                 .border(Color.gray.opacity(0.2), width: 1)
 
+                if isBootstrappingConnection {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                            .scaleEffect(0.75)
+                        Text("Connecting to local server... retrying once automatically")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color.blue.opacity(0.06))
+                }
+
                 // Tab content
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -160,18 +176,66 @@ struct ContentView: View {
                 }
 
                 ErrorPanel(
-                    message: apiClient.errorMessage,
+                    message: visibleErrorMessage,
                     onDismiss: { apiClient.errorMessage = nil }
                 )
                 .frame(height: errorPanelHeight)
             }
         }
         .onAppear {
+            guard !hasBootstrapped else { return }
+            hasBootstrapped = true
+            bootstrapInitialDataLoad()
+        }
+    }
+
+    private var visibleErrorMessage: String? {
+        guard let message = apiClient.errorMessage else { return nil }
+        if isBootstrappingConnection && isLikelyConnectionError(message) {
+            return nil
+        }
+        return message
+    }
+
+    private func bootstrapInitialDataLoad() {
+        isBootstrappingConnection = true
+
+        func loadAll() {
             apiClient.fetchBooks()
             apiClient.fetchGames()
             apiClient.fetchMovies()
             apiClient.fetchBorrowers()
         }
+
+        loadAll()
+
+        // Retry once after a short delay to absorb backend startup race conditions.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            if let currentError = apiClient.errorMessage,
+               isLikelyConnectionError(currentError) {
+                apiClient.errorMessage = nil
+            }
+            loadAll()
+        }
+
+        // End bootstrap phase; only then allow connection errors to surface.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
+            isBootstrappingConnection = false
+            if let currentError = apiClient.errorMessage,
+               isLikelyConnectionError(currentError) {
+                apiClient.errorMessage = "Could not connect to the server."
+            }
+        }
+    }
+
+    private func isLikelyConnectionError(_ message: String) -> Bool {
+        let lower = message.lowercased()
+        return lower.contains("cannot connect") ||
+               lower.contains("not connected") ||
+               lower.contains("timed out") ||
+               lower.contains("offline") ||
+               lower.contains("network") ||
+               lower.contains("could not connect")
     }
 }
 

@@ -227,10 +227,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let envPath = ProcessInfo.processInfo.environment["MEDIA_INVENTORY_PROJECT_ROOT"]
         let userDefaultPath = UserDefaults.standard.string(forKey: "MediaInventoryProjectPath")
         let home = NSHomeDirectory()
+        let cwd = fm.currentDirectoryPath
+        let bundlePath = Bundle.main.bundleURL.path
 
         let candidates = [
             envPath,
             userDefaultPath,
+            cwd,
             "\(home)/Media-inventory-system",
             "\(home)/Documents/Media-inventory-system"
         ].compactMap { $0 }
@@ -241,6 +244,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if fm.fileExists(atPath: appPyPath) {
                 return normalized
             }
+        }
+
+        // Fallback: walk up from app bundle path to find app.py in parent directories.
+        var currentPath = (bundlePath as NSString).deletingLastPathComponent
+        for _ in 0..<8 {
+            let appPyPath = (currentPath as NSString).appendingPathComponent("app.py")
+            if fm.fileExists(atPath: appPyPath) {
+                return currentPath
+            }
+            let parent = (currentPath as NSString).deletingLastPathComponent
+            if parent == currentPath {
+                break
+            }
+            currentPath = parent
         }
 
         return nil
