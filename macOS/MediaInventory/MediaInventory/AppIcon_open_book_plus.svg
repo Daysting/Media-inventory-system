@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bookGradientLeft" x1="180" y1="220" x2="510" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A90E2"/>
+      <stop offset="1" stop-color="#245EA8"/>
+    </linearGradient>
+    <linearGradient id="bookGradientRight" x1="844" y1="220" x2="514" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A90E2"/>
+      <stop offset="1" stop-color="#245EA8"/>
+    </linearGradient>
+    <filter id="softShadow" x="120" y="160" width="784" height="744" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#0A2B56" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <!-- Left open page -->
+    <path d="M512 280C456 230 356 220 216 246C199 249 186 264 186 282V714C186 739 208 756 232 751C354 724 446 733 512 788V280Z" fill="url(#bookGradientLeft)"/>
+
+    <!-- Right open page -->
+    <path d="M512 280C568 230 668 220 808 246C825 249 838 264 838 282V714C838 739 816 756 792 751C670 724 578 733 512 788V280Z" fill="url(#bookGradientRight)"/>
+
+    <!-- Book center seam -->
+    <path d="M512 282V790" stroke="#D9EBFF" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Page edge highlights -->
+    <path d="M244 308C358 286 442 296 496 342" stroke="#D9EBFF" stroke-width="14" stroke-linecap="round" opacity="0.62"/>
+    <path d="M780 308C666 286 582 296 528 342" stroke="#D9EBFF" stroke-width="14" stroke-linecap="round" opacity="0.62"/>
+  </g>
+
+  <!-- Plus badge -->
+  <circle cx="512" cy="564" r="128" fill="#1DB954"/>
+  <circle cx="512" cy="564" r="128" fill="url(#plusGloss)" opacity="0.24"/>
+  <defs>
+    <linearGradient id="plusGloss" x1="420" y1="470" x2="616" y2="650" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M512 486V642" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+  <path d="M434 564H590" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+</svg>
