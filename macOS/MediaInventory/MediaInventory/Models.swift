@@ -29,15 +29,15 @@ struct Book: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = container.decodeFlexibleID(forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
-        author = try container.decodeIfPresent(String.self, forKey: .author)
-        yearPublished = try container.decodeIfPresent(Int.self, forKey: .yearPublished)
-        publisher = try container.decodeIfPresent(String.self, forKey: .publisher)
-        fictionNonfiction = try container.decodeIfPresent(String.self, forKey: .fictionNonfiction)
-        genre = try container.decodeIfPresent(String.self, forKey: .genre)
-        description = try container.decodeIfPresent(String.self, forKey: .description)
-        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
-        status = try container.decode(String.self, forKey: .status)
+        title = container.decodeFlexibleString(forKey: .title, default: "Untitled")
+        author = container.decodeFlexibleOptionalString(forKey: .author)
+        yearPublished = container.decodeFlexibleOptionalInt(forKey: .yearPublished)
+        publisher = container.decodeFlexibleOptionalString(forKey: .publisher)
+        fictionNonfiction = container.decodeFlexibleOptionalString(forKey: .fictionNonfiction)
+        genre = container.decodeFlexibleOptionalString(forKey: .genre)
+        description = container.decodeFlexibleOptionalString(forKey: .description)
+        imageUrl = container.decodeFlexibleOptionalString(forKey: .imageUrl)
+        status = container.decodeFlexibleString(forKey: .status, default: "owned")
     }
 }
 
@@ -186,6 +186,17 @@ struct Borrower: Identifiable, Codable {
 struct BooksResponse: Codable {
     let success: Bool
     let books: [Book]
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case books
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = (try? container.decode(Bool.self, forKey: .success)) ?? false
+        books = (try? container.decode([Book].self, forKey: .books)) ?? []
+    }
 }
 
 struct GamesResponse: Codable {
