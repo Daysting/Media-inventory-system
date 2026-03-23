@@ -196,44 +196,18 @@ struct ReportsView: View {
         let page = PrintReportPage(title: title, generatedAt: date, content: content)
         let host = NSHostingView(rootView: page)
         host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 100)
-
-        // The window must be ordered into the window server session (even if invisible)
-        // so that the compositor allocates a real CGContext. Without this, NSPrintOperation's
-        // drawRect gets a null context and CoreGraphics logs CGContextClipToRect errors.
-        let printWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: pageWidth, height: 100),
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: false
-        )
-
-        // Disable all scene/restoration tracking for this ephemeral window.
-        printWindow.isReleasedWhenClosed = true
-        printWindow.isOpaque = false
-        printWindow.alphaValue = 0
-        printWindow.isRestorable = false
-        printWindow.restorationClass = nil
-        printWindow.identifier = NSUserInterfaceItemIdentifier("")
-
-        printWindow.contentView = host
-        printWindow.orderFrontRegardless()
-
         host.layoutSubtreeIfNeeded()
         let fittedHeight = max(host.fittingSize.height, 200)
         host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: fittedHeight)
-        printWindow.setContentSize(NSSize(width: pageWidth, height: fittedHeight))
 
         let op = NSPrintOperation(view: host, printInfo: pi)
         op.jobTitle = "Daysting’s Home Inventory – \(title)"
         op.showsPrintPanel    = true
         op.showsProgressPanel = true
-        op.run()
-
-        // Clean up: remove from scene tracking, then close and release.
-        printWindow.orderOut(nil)
-        DispatchQueue.main.async {
-            // Delay close to ensure print operation is fully finished.
-            printWindow.close()
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow {
+            op.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+        } else {
+            op.run()
         }
     }
 }
