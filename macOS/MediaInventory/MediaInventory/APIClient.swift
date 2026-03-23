@@ -45,6 +45,14 @@ class APIClient: ObservableObject {
     @Published var mostPopular: MostPopularReport?
     @Published var isLoadingReport = false
 
+    // MARK: - Diagnostics State
+    @Published var diagnosticsStats: DiagnosticsStats?
+    @Published var dbHealthy: Bool?
+    @Published var isLoadingDiagnostics = false
+    @Published var isCheckingIntegrity = false
+    @Published var isRepairing = false
+    @Published var lastRepairSuccess: Bool?
+
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showNewBookSheet = false
@@ -673,7 +681,60 @@ class APIClient: ObservableObject {
         }
     }
 
-    // MARK: - Report Parsers
+    // MARK: - Diagnostics
+
+    func fetchDiagnosticsStats() {
+        isLoadingDiagnostics = true
+        requestData(endpoint: "/diagnostics") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingDiagnostics = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.diagnosticsStats = try self.parseDiagnosticsStats(data: data) }
+                catch { self.errorMessage = "Diagnostics parse error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func checkDatabaseIntegrity() {
+        isCheckingIntegrity = true
+        dbHealthy = nil
+        requestData(endpoint: "/check-integrity") { [weak self] result in
+            guard let self else { return }
+            self.isCheckingIntegrity = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                self.dbHealthy = json?["healthy"] as? Bool
+            }
+        }
+    }
+
+    func repairDatabase(completion: @escaping (Bool) -> Void) {
+        isRepairing = true
+        lastRepairSuccess = nil
+        requestData(endpoint: "/repair", method: "POST") { [weak self] result in
+            guard let self else { return }
+            self.isRepairing = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+                self.lastRepairSuccess = false
+                completion(false)
+            case .success(let data):
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                let ok = json?["success"] as? Bool ?? false
+                self.lastRepairSuccess = ok
+                completion(ok)
+            }
+        }
+    }
+
+
 
     private func parseInventorySummary(data: Data) throws -> InventorySummaryReport {
         let json = try JSONSerialization.jsonObject(with: data)
@@ -802,6 +863,21 @@ class APIClient: ObservableObject {
             book:  parseItem("book"),
             game:  parseItem("game"),
             movie: parseItem("movie")
+        )
+    }
+
+    private func parseDiagnosticsStats(data: Data) throws -> DiagnosticsStats {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let stats = root["stats"] as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+        return DiagnosticsStats(
+            totalBooks:       intValue(stats["total_books"]) ?? 0,
+            totalGames:       intValue(stats["total_games"]) ?? 0,
+            totalMovies:      intValue(stats["total_movies"]) ?? 0,
+            totalBorrowers:   intValue(stats["total_borrowers"]) ?? 0,
+            itemsCheckedOut:  intValue(stats["items_checked_out"]) ?? 0
         )
     }
 }

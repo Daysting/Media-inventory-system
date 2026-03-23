@@ -399,3 +399,13 @@ struct MostPopularReport {
     let game: PopularItem?
     let movie: PopularItem?
 }
+
+// MARK: - Diagnostics Models
+
+struct DiagnosticsStats {
+    let totalBooks: Int
+    let totalGames: Int
+    let totalMovies: Int
+    let totalBorrowers: Int
+    let itemsCheckedOut: Int
+}

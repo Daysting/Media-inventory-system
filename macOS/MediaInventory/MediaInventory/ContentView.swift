@@ -6,7 +6,7 @@ struct ContentView: View {
     private let errorPanelHeight: CGFloat = 120
     
     enum Tab {
-        case dashboard, books, games, movies, borrowers, checkout, reports
+        case dashboard, books, games, movies, borrowers, checkout, reports, diagnostics
     }
     
     var body: some View {
@@ -93,6 +93,21 @@ struct ContentView: View {
                     action: { selectedTab = .reports }
                 )
 
+                Text("SYSTEM")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                NavigationButton(
+                    icon: "stethoscope",
+                    label: "Diagnostics",
+                    isSelected: selectedTab == .diagnostics,
+                    action: { selectedTab = .diagnostics }
+                )
+
                 Spacer()
             }
             .frame(width: 220)
@@ -135,6 +150,8 @@ struct ContentView: View {
                                 CheckoutView()
                             case .reports:
                                 ReportsView()
+                            case .diagnostics:
+                                DiagnosticsView()
                             }
                         }
                         .environmentObject(apiClient)
@@ -251,6 +268,7 @@ extension ContentView.Tab {
         case .borrowers: return "Borrowers"
         case .checkout: return "Checkout & Return"
         case .reports: return "Reports"
+        case .diagnostics: return "Diagnostics"
         }
     }
     
@@ -263,6 +281,7 @@ extension ContentView.Tab {
         case .borrowers: return "Manage borrower information"
         case .checkout: return "Manage item checkouts and returns"
         case .reports: return "Analytics and usage reports"
+        case .diagnostics: return "System health, database integrity and repair"
         }
     }
 }
