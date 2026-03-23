@@ -14,7 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     static var sharedNotificationManager: NotificationManager = NotificationManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        configureApplicationIcon()
         emitDiagnostic("Local mode enabled: using native SQLite datastore")
         if shouldEnableSpotlightIndexing() {
             setupSpotlightIntegration()
@@ -23,24 +22,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func configureApplicationIcon() {
-        if let iconImage = NSImage(named: "AppIcon") {
-            NSApp.applicationIconImage = iconImage
-        }
-    }
-
     // MARK: - Spotlight Integration
     private func setupSpotlightIntegration() {
         searchIndexer = SearchIndexer()
         searchIndexer?.indexMedia()
-    }
-
-    // MARK: - Handle Spotlight Search Results
-    func application(_ application: NSApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([NSUserActivityRestoring]) -> Void) -> Bool {
-        if userActivity.activityType == NSUserActivityTypeBrowsingWeb {
-            return true
-        }
-        return false
     }
 
     private func emitDiagnostic(_ message: String) {
