@@ -4,8 +4,10 @@ struct ContentView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var selectedTab: Tab = .dashboard
     private let errorPanelHeight: CGFloat = 120
+    private let startupPanelHeight: CGFloat = 130
     @State private var hasBootstrapped = false
     @State private var isBootstrappingConnection = false
+    @State private var startupDiagnostics: [String] = []
     
     enum Tab {
         case dashboard, books, games, movies, borrowers, checkout, reports, diagnostics
@@ -180,12 +182,26 @@ struct ContentView: View {
                     onDismiss: { apiClient.errorMessage = nil }
                 )
                 .frame(height: errorPanelHeight)
+
+                StartupDiagnosticsPanel(
+                    lines: startupDiagnostics,
+                    isBootstrapping: isBootstrappingConnection,
+                    onClear: { startupDiagnostics.removeAll() }
+                )
+                .frame(height: startupPanelHeight)
             }
         }
         .onAppear {
             guard !hasBootstrapped else { return }
             hasBootstrapped = true
             bootstrapInitialDataLoad()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .backendStartupDiagnostic)) { notification in
+            guard let line = notification.userInfo?["message"] as? String else { return }
+            startupDiagnostics.append(line)
+            if startupDiagnostics.count > 250 {
+                startupDiagnostics.removeFirst(startupDiagnostics.count - 250)
+            }
         }
     }
 
@@ -311,6 +327,68 @@ struct ErrorPanel: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: NSColor.controlBackgroundColor))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 1)
+        }
+    }
+}
+
+struct StartupDiagnosticsPanel: View {
+    let lines: [String]
+    let isBootstrapping: Bool
+    let onClear: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label("Startup Diagnostics", systemImage: "terminal")
+                    .font(.system(size: 13, weight: .semibold))
+
+                if isBootstrapping {
+                    Text("LIVE")
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.2))
+                        .cornerRadius(4)
+                }
+
+                Spacer()
+
+                if !lines.isEmpty {
+                    Button("Clear", action: onClear)
+                        .buttonStyle(.borderless)
+                }
+            }
+
+            Divider()
+
+            Group {
+                if lines.isEmpty {
+                    Text("No startup diagnostics yet")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
+                    ScrollView {
+                        Text(lines.joined(separator: "\n"))
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(Color(nsColor: NSColor.controlBackgroundColor))
         .overlay(alignment: .top) {

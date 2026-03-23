@@ -2,6 +2,10 @@ import Cocoa
 import Network
 import SwiftUI
 
+extension Notification.Name {
+    static let backendStartupDiagnostic = Notification.Name("BackendStartupDiagnostic")
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var notificationManager: NotificationManager?
@@ -86,33 +90,47 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Flask Backend
     private func ensureFlaskServerRunning() {
+        emitDiagnostic("Backend startup check initiated")
         if let reachableBaseURL = firstReachableBackendBaseURL() {
             APIClient.persistBaseURL(reachableBaseURL)
+            emitDiagnostic("Using existing backend at \(reachableBaseURL)")
             return
         }
 
+        emitDiagnostic("No reachable backend detected, attempting managed launch")
         for port in APIClient.preferredPorts where isLocalPortAvailable(port) {
+            emitDiagnostic("Port \(port) is available; attempting launch")
             guard startFlaskServerProcess(port: port) else {
+                emitDiagnostic("Launch attempt on port \(port) failed")
                 continue
             }
 
             let baseURL = APIClient.baseURL(for: port)
             if waitForBackendReadiness(baseURL: baseURL, timeout: 8.0) {
                 APIClient.persistBaseURL(baseURL)
+                emitDiagnostic("Backend ready at \(baseURL)")
                 return
             }
 
+            emitDiagnostic("Backend on port \(port) did not become ready in time; stopping process")
             stopManagedFlaskServerIfNeeded()
         }
 
+        for port in APIClient.preferredPorts where !isLocalPortAvailable(port) {
+            emitDiagnostic("Port \(port) is in use by another process")
+        }
+
         print("Unable to start Flask server automatically on ports: \(APIClient.preferredPorts)")
+        emitDiagnostic("Unable to start backend automatically on preferred ports")
     }
 
     private func startFlaskServerProcess(port: Int) -> Bool {
         guard let projectRoot = locateProjectRoot() else {
             print("Could not locate project root containing app.py")
+            emitDiagnostic("Could not locate project root containing app.py")
             return false
         }
+        emitDiagnostic("Project root resolved: \(projectRoot)")
 
         let process = Process()
         process.currentDirectoryURL = URL(fileURLWithPath: projectRoot)
@@ -122,13 +140,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         environment["PYTHONUNBUFFERED"] = "1"
         process.environment = environment
 
-        let venvPython = "\(projectRoot)/.venv/bin/python"
-        if FileManager.default.isExecutableFile(atPath: venvPython) {
-            process.executableURL = URL(fileURLWithPath: venvPython)
+        let pythonCandidates = [
+            "\(projectRoot)/.venv/bin/python",
+            "/opt/homebrew/bin/python3",
+            "/usr/local/bin/python3",
+            "/usr/bin/python3"
+        ]
+
+        if let pythonPath = pythonCandidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+            process.executableURL = URL(fileURLWithPath: pythonPath)
             process.arguments = ["app.py"]
+            emitDiagnostic("Using Python executable: \(pythonPath)")
         } else {
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             process.arguments = ["python3", "app.py"]
+            emitDiagnostic("Using fallback Python executable: /usr/bin/env python3")
         }
 
         let outputPipe = Pipe()
@@ -140,9 +166,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             flaskProcess = process
             startedFlaskProcess = true
             print("Started Flask server from: \(projectRoot) on port \(port)")
+            emitDiagnostic("Started Flask process on port \(port) (pid: \(process.processIdentifier))")
             return true
         } catch {
             print("Failed to start Flask server: \(error.localizedDescription)")
+            emitDiagnostic("Failed to start Flask process: \(error.localizedDescription)")
             return false
         }
     }
@@ -154,6 +182,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if process.isRunning {
             process.terminate()
+            emitDiagnostic("Stopped managed Flask process")
         }
 
         flaskProcess = nil
@@ -262,4 +291,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         return nil
     }
+
+    private func emitDiagnostic(_ message: String) {
+        let ts = Self.diagnosticTimestampFormatter.string(from: Date())
+        let line = "[\(ts)] \(message)"
+        NotificationCenter.default.post(
+            name: .backendStartupDiagnostic,
+            object: nil,
+            userInfo: ["message": line]
+        )
+    }
+
+    private static let diagnosticTimestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 }
