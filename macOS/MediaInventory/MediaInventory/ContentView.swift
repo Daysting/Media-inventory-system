@@ -3,136 +3,133 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var selectedTab: Tab = .dashboard
+    private let errorPanelHeight: CGFloat = 120
     
     enum Tab {
         case dashboard, books, games, movies, borrowers, checkout
     }
     
     var body: some View {
-        ZStack {
-            // Main content
-            HStack(spacing: 0) {
-                // Sidebar
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("MAIN")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                    
-                    NavigationButton(
-                        icon: "chart.pie.fill",
-                        label: "Dashboard",
-                        isSelected: selectedTab == .dashboard,
-                        action: { selectedTab = .dashboard }
-                    )
-                    
-                    Text("MEDIA")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                    
-                    NavigationButton(
-                        icon: "book.fill",
-                        label: "Books",
-                        isSelected: selectedTab == .books,
-                        action: { selectedTab = .books }
-                    )
-                    
-                    NavigationButton(
-                        icon: "gamecontroller.fill",
-                        label: "Video Games",
-                        isSelected: selectedTab == .games,
-                        action: { selectedTab = .games }
-                    )
-                    
-                    NavigationButton(
-                        icon: "film.fill",
-                        label: "Movies",
-                        isSelected: selectedTab == .movies,
-                        action: { selectedTab = .movies }
-                    )
-                    
-                    Text("MANAGEMENT")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                    
-                    NavigationButton(
-                        icon: "person.2.fill",
-                        label: "Borrowers",
-                        isSelected: selectedTab == .borrowers,
-                        action: { selectedTab = .borrowers }
-                    )
-                    
-                    NavigationButton(
-                        icon: "arrow.left.arrow.right",
-                        label: "Checkout/Return",
-                        isSelected: selectedTab == .checkout,
-                        action: { selectedTab = .checkout }
-                    )
-                    
+        HStack(spacing: 0) {
+            // Sidebar
+            VStack(alignment: .leading, spacing: 8) {
+                Text("MAIN")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+
+                NavigationButton(
+                    icon: "chart.pie.fill",
+                    label: "Dashboard",
+                    isSelected: selectedTab == .dashboard,
+                    action: { selectedTab = .dashboard }
+                )
+
+                Text("MEDIA")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                NavigationButton(
+                    icon: "book.fill",
+                    label: "Books",
+                    isSelected: selectedTab == .books,
+                    action: { selectedTab = .books }
+                )
+
+                NavigationButton(
+                    icon: "gamecontroller.fill",
+                    label: "Video Games",
+                    isSelected: selectedTab == .games,
+                    action: { selectedTab = .games }
+                )
+
+                NavigationButton(
+                    icon: "film.fill",
+                    label: "Movies",
+                    isSelected: selectedTab == .movies,
+                    action: { selectedTab = .movies }
+                )
+
+                Text("MANAGEMENT")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                NavigationButton(
+                    icon: "person.2.fill",
+                    label: "Borrowers",
+                    isSelected: selectedTab == .borrowers,
+                    action: { selectedTab = .borrowers }
+                )
+
+                NavigationButton(
+                    icon: "arrow.left.arrow.right",
+                    label: "Checkout/Return",
+                    isSelected: selectedTab == .checkout,
+                    action: { selectedTab = .checkout }
+                )
+
+                Spacer()
+            }
+            .frame(width: 220)
+            .background(Color(nsColor: NSColor.controlBackgroundColor))
+            .border(Color.gray.opacity(0.2), width: 1)
+
+            // Main content area
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(selectedTab.title)
+                            .font(.system(size: 28, weight: .semibold))
+                        Text(selectedTab.subtitle)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
                     Spacer()
                 }
-                .frame(width: 220)
+                .padding(20)
                 .background(Color(nsColor: NSColor.controlBackgroundColor))
                 .border(Color.gray.opacity(0.2), width: 1)
-                
-                // Main content area
-                VStack(spacing: 0) {
-                    // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(selectedTab.title)
-                                .font(.system(size: 28, weight: .semibold))
-                            Text(selectedTab.subtitle)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(20)
-                    .background(Color(nsColor: NSColor.controlBackgroundColor))
-                    .border(Color.gray.opacity(0.2), width: 1)
-                    
-                    // Tab content
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Group {
-                                switch selectedTab {
-                                case .dashboard:
-                                    DashboardView()
-                                case .books:
-                                    BooksView()
-                                case .games:
-                                    GamesView()
-                                case .movies:
-                                    MoviesView()
-                                case .borrowers:
-                                    BorrowersView()
-                                case .checkout:
-                                    CheckoutView()
-                                }
+
+                // Tab content
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Group {
+                            switch selectedTab {
+                            case .dashboard:
+                                DashboardView()
+                            case .books:
+                                BooksView()
+                            case .games:
+                                GamesView()
+                            case .movies:
+                                MoviesView()
+                            case .borrowers:
+                                BorrowersView()
+                            case .checkout:
+                                CheckoutView()
                             }
-                            .environmentObject(apiClient)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .environmentObject(apiClient)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-            }
-            
-            // Error overlay
-            if let error = apiClient.errorMessage {
-                ErrorAlert(message: error, onDismiss: {
-                    apiClient.errorMessage = nil
-                })
+
+                ErrorPanel(
+                    message: apiClient.errorMessage,
+                    onDismiss: { apiClient.errorMessage = nil }
+                )
+                .frame(height: errorPanelHeight)
             }
         }
         .onAppear {
@@ -172,26 +169,57 @@ struct NavigationButton: View {
     }
 }
 
-// MARK: - Error Alert
-struct ErrorAlert: View {
-    let message: String
+// MARK: - Error Panel
+struct ErrorPanel: View {
+    let message: String?
     let onDismiss: () -> Void
-    
+
     var body: some View {
         VStack {
             HStack {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundColor(.red)
-                Text(message)
+                Label("Errors", systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                Spacer()
+
+                if message != nil {
+                    Button("Clear", action: onDismiss)
+                        .buttonStyle(.borderless)
+                }
             }
-            .padding(12)
-            .background(Color.red.opacity(0.1))
-            .cornerRadius(8)
-            .padding()
-            
+
+            Divider()
+
+            Group {
+                if let message, !message.isEmpty {
+                    ScrollView {
+                        Text(message)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                } else {
+                    Text("No current errors")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+            }
+
             Spacer()
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: NSColor.controlBackgroundColor))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 1)
+        }
     }
 }
 
