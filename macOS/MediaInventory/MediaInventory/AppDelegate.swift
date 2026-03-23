@@ -1,4 +1,5 @@
 import Cocoa
+import Network
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -85,19 +86,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Flask Backend
     private func ensureFlaskServerRunning() {
-        if isBackendReachable() {
+        if let reachableBaseURL = firstReachableBackendBaseURL() {
+            APIClient.persistBaseURL(reachableBaseURL)
             return
         }
 
-        guard startFlaskServerProcess() else {
-            print("Unable to start Flask server automatically")
-            return
+        for port in APIClient.preferredPorts where isLocalPortAvailable(port) {
+            guard startFlaskServerProcess(port: port) else {
+                continue
+            }
+
+            let baseURL = APIClient.baseURL(for: port)
+            if waitForBackendReadiness(baseURL: baseURL, timeout: 8.0) {
+                APIClient.persistBaseURL(baseURL)
+                return
+            }
+
+            stopManagedFlaskServerIfNeeded()
         }
 
-        _ = waitForBackendReadiness(timeout: 8.0)
+        print("Unable to start Flask server automatically on ports: \(APIClient.preferredPorts)")
     }
 
-    private func startFlaskServerProcess() -> Bool {
+    private func startFlaskServerProcess(port: Int) -> Bool {
         guard let projectRoot = locateProjectRoot() else {
             print("Could not locate project root containing app.py")
             return false
@@ -105,6 +116,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let process = Process()
         process.currentDirectoryURL = URL(fileURLWithPath: projectRoot)
+        var environment = ProcessInfo.processInfo.environment
+        environment["MEDIA_INVENTORY_PORT"] = String(port)
+        process.environment = environment
 
         let venvPython = "\(projectRoot)/.venv/bin/python"
         if FileManager.default.isExecutableFile(atPath: venvPython) {
@@ -123,7 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             try process.run()
             flaskProcess = process
             startedFlaskProcess = true
-            print("Started Flask server from: \(projectRoot)")
+            print("Started Flask server from: \(projectRoot) on port \(port)")
             return true
         } catch {
             print("Failed to start Flask server: \(error.localizedDescription)")
@@ -144,8 +158,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         startedFlaskProcess = false
     }
 
-    private func isBackendReachable() -> Bool {
-        guard let url = URL(string: APIClient.defaultBaseURL + "/books") else {
+    private func firstReachableBackendBaseURL() -> String? {
+        for baseURL in APIClient.candidateBaseURLs where isBackendReachable(baseURL: baseURL) {
+            return baseURL
+        }
+
+        return nil
+    }
+
+    private func isBackendReachable(baseURL: String) -> Bool {
+        guard let url = URL(string: baseURL + "/books") else {
             return false
         }
 
@@ -167,15 +189,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return reachable
     }
 
-    private func waitForBackendReadiness(timeout: TimeInterval) -> Bool {
+    private func waitForBackendReadiness(baseURL: String, timeout: TimeInterval) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if isBackendReachable() {
+            if isBackendReachable(baseURL: baseURL) {
                 return true
             }
             Thread.sleep(forTimeInterval: 0.25)
         }
         return false
+    }
+
+    private func isLocalPortAvailable(_ port: Int) -> Bool {
+        guard let nwPort = NWEndpoint.Port(rawValue: UInt16(port)) else {
+            return false
+        }
+
+        do {
+            let listener = try NWListener(using: .tcp, on: nwPort)
+            listener.cancel()
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func locateProjectRoot() -> String? {

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import system
 import os
+import socket
 import uuid
 import urllib.parse
 
@@ -9,6 +10,20 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def resolve_server_port():
+    configured_port = os.environ.get('MEDIA_INVENTORY_PORT')
+    if configured_port:
+        return int(configured_port)
+
+    for port in (5000, 5001, 5002):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if sock.connect_ex(('127.0.0.1', port)) != 0:
+                return port
+
+    return 5000
 
 @app.route('/')
 def index():
@@ -530,4 +545,4 @@ def repair():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=resolve_server_port())

@@ -2,7 +2,33 @@ import Foundation
 import Combine
 
 class APIClient: ObservableObject {
-    static let defaultBaseURL = "http://127.0.0.1:5000/api"
+    static let apiBaseURLDefaultsKey = "MediaInventoryAPIBaseURL"
+    static let preferredPorts = [5000, 5001, 5002]
+    static let defaultBaseURL = baseURL(for: preferredPorts[0])
+
+    static func baseURL(for port: Int) -> String {
+        "http://127.0.0.1:\(port)/api"
+    }
+
+    static var currentBaseURL: String {
+        UserDefaults.standard.string(forKey: apiBaseURLDefaultsKey) ?? defaultBaseURL
+    }
+
+    static var candidateBaseURLs: [String] {
+        var urls: [String] = []
+
+        if let stored = UserDefaults.standard.string(forKey: apiBaseURLDefaultsKey) {
+            urls.append(stored)
+        }
+
+        urls.append(contentsOf: preferredPorts.map(baseURL(for:)))
+
+        return Array(NSOrderedSet(array: urls)) as? [String] ?? urls
+    }
+
+    static func persistBaseURL(_ baseURL: String) {
+        UserDefaults.standard.set(baseURL, forKey: apiBaseURLDefaultsKey)
+    }
 
     @Published var books: [Book] = []
     @Published var games: [Game] = []
@@ -13,7 +39,9 @@ class APIClient: ObservableObject {
     @Published var errorMessage: String?
     @Published var showNewBookSheet = false
     
-    private let baseURL = APIClient.defaultBaseURL
+    private var baseURL: String {
+        APIClient.currentBaseURL
+    }
     private let session = URLSession.shared
     
     // MARK: - Books
