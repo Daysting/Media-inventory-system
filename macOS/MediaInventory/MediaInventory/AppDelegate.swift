@@ -11,10 +11,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var searchIndexer: SearchIndexer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        configureApplicationIcon()
         emitDiagnostic("Local mode enabled: using native SQLite datastore")
         setupMenuBar()
         setupNotificationManager()
         setupSpotlightIntegration()
+    }
+
+    private func configureApplicationIcon() {
+        if let iconImage = NSImage(named: "AppIcon") {
+            NSApp.applicationIconImage = iconImage
+        }
     }
 
     // MARK: - Menu Bar

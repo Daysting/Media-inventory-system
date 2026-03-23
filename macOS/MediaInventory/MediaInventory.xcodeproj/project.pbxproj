@@ -22,6 +22,7 @@
 		A1000001000000000000000D /* CheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000010D /* CheckoutView.swift */; };
 		A1000001000000000000000E /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000111 /* ReportsView.swift */; };
 		A1000001000000000000000F /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000112 /* DiagnosticsView.swift */; };
+		A10000010000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000113 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		A1000001000000000000010D /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
 		A10000010000000000000111 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		A10000010000000000000112 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsView.swift; sourceTree = "<group>"; };
+		A10000010000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
 		A10000010000000000000110 /* MediaInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -67,6 +69,7 @@
 		A10000010000000000000302 /* MediaInventory */ = {
 			isa = PBXGroup;
 			children = (
+				A10000010000000000000113 /* Assets.xcassets */,
 				A10000010000000000000101 /* MediaInventoryApp.swift */,
 				A10000010000000000000102 /* AppDelegate.swift */,
 				A10000010000000000000103 /* Models.swift */,
@@ -154,6 +157,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000010000000000000010 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
