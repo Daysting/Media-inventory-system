@@ -147,11 +147,11 @@ struct Borrower: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = container.decodeFlexibleID(forKey: .id)
-        firstName = try container.decode(String.self, forKey: .firstName)
-        lastName = try container.decode(String.self, forKey: .lastName)
-        address = try container.decodeIfPresent(String.self, forKey: .address)
-        phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
-        email = try container.decodeIfPresent(String.self, forKey: .email)
+        firstName = container.decodeFlexibleString(forKey: .firstName, default: "Unknown")
+        lastName = container.decodeFlexibleString(forKey: .lastName, default: "Borrower")
+        address = container.decodeFlexibleOptionalString(forKey: .address)
+        phoneNumber = container.decodeFlexibleOptionalString(forKey: .phoneNumber)
+        email = container.decodeFlexibleOptionalString(forKey: .email)
     }
     
     var fullName: String {
@@ -178,6 +178,17 @@ struct MoviesResponse: Codable {
 struct BorrowersResponse: Codable {
     let success: Bool
     let borrowers: [Borrower]
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case borrowers
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = (try? container.decode(Bool.self, forKey: .success)) ?? false
+        borrowers = (try? container.decode([Borrower].self, forKey: .borrowers)) ?? []
+    }
 }
 
 struct SuccessResponse: Codable {
@@ -201,5 +212,49 @@ private extension KeyedDecodingContainer {
         }
 
         return UUID().uuidString
+    }
+
+    func decodeFlexibleString(forKey key: K, default defaultValue: String = "") -> String {
+        if let stringValue = try? decode(String.self, forKey: key), !stringValue.isEmpty {
+            return stringValue
+        }
+
+        if let intValue = try? decode(Int.self, forKey: key) {
+            return String(intValue)
+        }
+
+        if let doubleValue = try? decode(Double.self, forKey: key) {
+            return String(doubleValue)
+        }
+
+        if let boolValue = try? decode(Bool.self, forKey: key) {
+            return String(boolValue)
+        }
+
+        return defaultValue
+    }
+
+    func decodeFlexibleOptionalString(forKey key: K) -> String? {
+        guard contains(key) else {
+            return nil
+        }
+
+        if let stringValue = try? decodeIfPresent(String.self, forKey: key) {
+            return stringValue
+        }
+
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key), let intValue {
+            return String(intValue)
+        }
+
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key), let doubleValue {
+            return String(doubleValue)
+        }
+
+        if let boolValue = try? decodeIfPresent(Bool.self, forKey: key), let boolValue {
+            return String(boolValue)
+        }
+
+        return nil
     }
 }
