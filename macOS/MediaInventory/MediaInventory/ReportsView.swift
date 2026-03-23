@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Root Reports View
 
@@ -7,26 +8,41 @@ struct ReportsView: View {
     @State private var selectedReport: ReportKind = .inventorySummary
 
     enum ReportKind: String, CaseIterable {
-        case inventorySummary  = "Summary"
-        case borrowerActivity  = "Borrowers"
-        case checkoutHistory   = "History"
-        case genreDistribution = "Genres"
-        case overdueItems      = "Overdue"
+        case inventorySummary   = "Summary"
+        case borrowerActivity   = "Borrowers"
+        case checkoutHistory    = "History"
+        case genreDistribution  = "Genres"
+        case overdueItems       = "Overdue"
+        case booksCatalog       = "Books"
+        case gamesCatalog       = "Games"
+        case moviesCatalog      = "Movies"
+        case electronicsCatalog = "Electronics"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Toolbar: report picker + refresh
-            HStack(spacing: 16) {
+            // Toolbar: report picker + buttons
+            HStack(spacing: 12) {
+                Text("Report:")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+
                 Picker("", selection: $selectedReport) {
                     ForEach(ReportKind.allCases, id: \.self) { kind in
                         Text(kind.rawValue).tag(kind)
                     }
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 520)
+                .frame(width: 180)
 
                 Spacer()
+
+                Button {
+                    printCurrentReport()
+                } label: {
+                    Label("Print", systemImage: "printer")
+                }
+                .buttonStyle(.borderless)
+                .disabled(apiClient.isLoadingReport)
 
                 Button {
                     loadCurrentReport()
@@ -55,6 +71,10 @@ struct ReportsView: View {
                     case .checkoutHistory:   CheckoutHistoryReportView()
                     case .genreDistribution: GenreDistributionReportView()
                     case .overdueItems:      OverdueItemsReportView()
+                    case .booksCatalog:      BooksCatalogReportView()
+                    case .gamesCatalog:      GamesCatalogReportView()
+                    case .moviesCatalog:     MoviesCatalogReportView()
+                    case .electronicsCatalog: ElectronicsCatalogReportView()
                     }
                 }
                 .environmentObject(apiClient)
@@ -71,7 +91,71 @@ struct ReportsView: View {
         case .checkoutHistory:   apiClient.fetchCheckoutHistoryReport()
         case .genreDistribution: apiClient.fetchGenreDistribution()
         case .overdueItems:      apiClient.fetchOverdueItems()
+        case .booksCatalog, .gamesCatalog, .moviesCatalog, .electronicsCatalog:
+            break // data already loaded at startup
         }
+    }
+
+    // MARK: - Print
+
+    private func printCurrentReport() {
+        let now = Date()
+        switch selectedReport {
+        case .inventorySummary:
+            guard let s = apiClient.inventorySummary else { return }
+            sendToPrinter(AnyView(PrintableInventorySummary(summary: s)),
+                          title: "Inventory Summary", date: now)
+        case .borrowerActivity:
+            sendToPrinter(AnyView(PrintableBorrowerActivityReport(entries: apiClient.borrowerActivity)),
+                          title: "Borrower Activity", date: now)
+        case .checkoutHistory:
+            sendToPrinter(AnyView(PrintableCheckoutHistoryReport(entries: apiClient.checkoutHistoryEntries)),
+                          title: "Checkout History", date: now)
+        case .genreDistribution:
+            guard let dist = apiClient.genreDistribution else { return }
+            sendToPrinter(AnyView(PrintableGenreReport(distribution: dist)),
+                          title: "Genre Distribution", date: now)
+        case .overdueItems:
+            sendToPrinter(AnyView(PrintableOverdueReport(items: apiClient.overdueItems)),
+                          title: "Overdue Items", date: now)
+        case .booksCatalog:
+            sendToPrinter(AnyView(PrintableBooksCatalog(books: apiClient.books)),
+                          title: "Books Catalog", date: now)
+        case .gamesCatalog:
+            sendToPrinter(AnyView(PrintableGamesCatalog(games: apiClient.games)),
+                          title: "Games Catalog", date: now)
+        case .moviesCatalog:
+            sendToPrinter(AnyView(PrintableMoviesCatalog(movies: apiClient.movies)),
+                          title: "Movies Catalog", date: now)
+        case .electronicsCatalog:
+            sendToPrinter(AnyView(PrintableElectronicsCatalog(electronics: apiClient.electronics)),
+                          title: "Electronics Catalog", date: now)
+        }
+    }
+
+    private func sendToPrinter(_ content: AnyView, title: String, date: Date) {
+        let page = PrintReportPage(title: title, generatedAt: date, content: content)
+        let host = NSHostingView(rootView: page)
+        let pageWidth: CGFloat = 756
+        host.frame = NSRect(x: 0, y: 0, width: pageWidth, height: 1)
+        host.layout()
+        let fittedHeight = host.fittingSize.height
+        host.frame = NSRect(x: 0, y: 0, width: pageWidth,
+                            height: fittedHeight > 10 ? fittedHeight + 100 : 5000)
+
+        let pi = NSPrintInfo.shared.copy() as! NSPrintInfo
+        pi.topMargin    = 36; pi.bottomMargin = 36
+        pi.leftMargin   = 36; pi.rightMargin  = 36
+        pi.horizontalPagination = .fit
+        pi.verticalPagination   = .automatic
+        pi.isHorizontallyCentered = false
+        pi.isVerticallyCentered   = false
+
+        let op = NSPrintOperation(view: host, printInfo: pi)
+        op.jobTitle = "Daysting’s Home Inventory – \(title)"
+        op.showsPrintPanel  = true
+        op.showsProgressPanel = true
+        op.run()
     }
 }
 
@@ -174,6 +258,9 @@ struct BorrowerActivityReportView: View {
 
     var body: some View {
         Table(apiClient.borrowerActivity.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("Borrower ID", value: \.id)
+                .width(90)
+
             TableColumn("Name", value: \.name)
                 .width(min: 140)
 
@@ -216,8 +303,14 @@ struct CheckoutHistoryReportView: View {
 
     var body: some View {
         Table(apiClient.checkoutHistoryEntries.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("Item ID", value: \.mediaId)
+                .width(90)
+
+            TableColumn("Borrower ID", value: \.borrowerId)
+                .width(90)
+
             TableColumn("Media Title", value: \.mediaTitle)
-                .width(min: 160)
+                .width(min: 140)
 
             TableColumn("Type") { entry in
                 Text(mediaTypeLabel(entry.mediaType))
@@ -389,8 +482,20 @@ struct OverdueItemsReportView: View {
             .padding(40)
         } else {
             Table(apiClient.overdueItems) {
+                TableColumn("Item ID") { item in
+                    Text(item.mediaId)
+                        .foregroundColor(.secondary)
+                }
+                .width(90)
+
+                TableColumn("Borrower ID") { item in
+                    Text(item.borrowerId)
+                        .foregroundColor(.secondary)
+                }
+                .width(90)
+
                 TableColumn("Media Title", value: \.mediaTitle)
-                    .width(min: 160)
+                    .width(min: 140)
 
                 TableColumn("Type") { item in
                     Text(mediaTypeLabel(item.mediaType))
@@ -434,6 +539,84 @@ struct OverdueItemsReportView: View {
         out.dateStyle = .medium
         out.timeStyle = .none
         return out.string(from: date)
+    }
+}
+
+// MARK: - Books Catalog
+
+struct BooksCatalogReportView: View {
+    @EnvironmentObject var apiClient: APIClient
+    @State private var sortOrder = [KeyPathComparator(\Book.title)]
+
+    var body: some View {
+        Table(apiClient.books.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("ID", value: \.id).width(90)
+            TableColumn("Title", value: \.title).width(min: 140)
+            TableColumn("Author") { b in Text(b.author ?? "—") }.width(min: 110)
+            TableColumn("Year") { b in Text(b.yearPublished.map(String.init) ?? "—") }.width(60)
+            TableColumn("Genre") { b in Text(b.genre ?? "—") }.width(90)
+            TableColumn("Cost") { b in Text(b.cost?.currencyDisplayText ?? "—") }.width(80)
+            TableColumn("Status") { b in StatusBadge(status: b.status) }.width(80)
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Games Catalog
+
+struct GamesCatalogReportView: View {
+    @EnvironmentObject var apiClient: APIClient
+    @State private var sortOrder = [KeyPathComparator(\Game.title)]
+
+    var body: some View {
+        Table(apiClient.games.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("ID", value: \.id).width(90)
+            TableColumn("Title", value: \.title).width(min: 140)
+            TableColumn("Platform") { g in Text(g.platform ?? "—") }.width(90)
+            TableColumn("Year") { g in Text(g.yearReleased.map(String.init) ?? "—") }.width(60)
+            TableColumn("Genre") { g in Text(g.genre ?? "—") }.width(90)
+            TableColumn("Cost") { g in Text(g.cost?.currencyDisplayText ?? "—") }.width(80)
+            TableColumn("Status") { g in StatusBadge(status: g.status) }.width(80)
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Movies Catalog
+
+struct MoviesCatalogReportView: View {
+    @EnvironmentObject var apiClient: APIClient
+    @State private var sortOrder = [KeyPathComparator(\Movie.title)]
+
+    var body: some View {
+        Table(apiClient.movies.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("ID", value: \.id).width(90)
+            TableColumn("Title", value: \.title).width(min: 140)
+            TableColumn("Director") { m in Text(m.director ?? "—") }.width(110)
+            TableColumn("Year") { m in Text(m.yearReleased.map(String.init) ?? "—") }.width(60)
+            TableColumn("Genre") { m in Text(m.genre ?? "—") }.width(90)
+            TableColumn("Cost") { m in Text(m.cost?.currencyDisplayText ?? "—") }.width(80)
+            TableColumn("Status") { m in StatusBadge(status: m.status) }.width(80)
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Electronics Catalog
+
+struct ElectronicsCatalogReportView: View {
+    @EnvironmentObject var apiClient: APIClient
+    @State private var sortOrder = [KeyPathComparator(\Electronic.title)]
+
+    var body: some View {
+        Table(apiClient.electronics.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("ID", value: \.id).width(90)
+            TableColumn("Title", value: \.title).width(min: 140)
+            TableColumn("Serial Number") { e in Text(e.serialNumber ?? "—") }.width(130)
+            TableColumn("Cost") { e in Text(e.cost?.currencyDisplayText ?? "—") }.width(80)
+            TableColumn("Status") { e in StatusBadge(status: e.status) }.width(80)
+        }
+        .padding(.horizontal, 20)
     }
 }
 

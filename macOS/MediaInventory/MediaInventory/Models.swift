@@ -453,6 +453,8 @@ struct BorrowerActivityEntry: Identifiable {
 
 struct CheckoutHistoryEntry: Identifiable {
     let id: String
+    let mediaId: String
+    let borrowerId: String
     let borrowerName: String
     let mediaTitle: String
     let mediaType: String
@@ -476,6 +478,7 @@ struct GenreCount: Identifiable {
 struct OverdueItem: Identifiable {
     var id: String { mediaId + borrowerName }
     let mediaId: String
+    let borrowerId: String
     let mediaType: String
     let mediaTitle: String
     let borrowerName: String

@@ -691,7 +691,9 @@ class APIClient: ObservableObject {
                        ch.media_type,
                        ch.checkout_date,
                        ch.return_date,
-                       ch.status
+                       ch.status,
+                       ch.borrower_id,
+                       ch.media_id
                 FROM checkout_history ch
                 JOIN borrowers b ON ch.borrower_id = b.id
                 LEFT JOIN books bk ON ch.media_type = 'books' AND ch.media_id = bk.id
@@ -707,6 +709,8 @@ class APIClient: ObservableObject {
                     results.append(
                         CheckoutHistoryEntry(
                             id: String(self.columnInt(stmt, 0) ?? 0),
+                            mediaId: self.columnText(stmt, 9) ?? "",
+                            borrowerId: self.columnText(stmt, 8) ?? "",
                             borrowerName: "\(self.columnText(stmt, 1) ?? "") \(self.columnText(stmt, 2) ?? "")".trimmingCharacters(in: .whitespaces),
                             mediaTitle: self.columnText(stmt, 3) ?? "—",
                             mediaType: self.columnText(stmt, 4) ?? "",
@@ -782,7 +786,8 @@ class APIClient: ObservableObject {
                        END,
                        b.first_name,
                        b.last_name,
-                       ch.checkout_date
+                       ch.checkout_date,
+                       b.id
                 FROM checkout_history ch
                 JOIN borrowers b ON ch.borrower_id = b.id
                 LEFT JOIN books bk ON ch.media_type = 'books' AND ch.media_id = bk.id
@@ -801,6 +806,7 @@ class APIClient: ObservableObject {
                     results.append(
                         OverdueItem(
                             mediaId: self.columnText(stmt, 0) ?? "",
+                            borrowerId: self.columnText(stmt, 6) ?? "",
                             mediaType: self.columnText(stmt, 1) ?? "",
                             mediaTitle: self.columnText(stmt, 2) ?? "—",
                             borrowerName: "\(self.columnText(stmt, 3) ?? "") \(self.columnText(stmt, 4) ?? "")".trimmingCharacters(in: .whitespaces),
