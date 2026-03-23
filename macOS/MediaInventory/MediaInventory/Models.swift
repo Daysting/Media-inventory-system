@@ -113,16 +113,16 @@ struct Movie: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = container.decodeFlexibleID(forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
-        director = try container.decodeIfPresent(String.self, forKey: .director)
-        cast = try container.decodeIfPresent(String.self, forKey: .cast)
-        yearReleased = try container.decodeIfPresent(Int.self, forKey: .yearReleased)
-        studio = try container.decodeIfPresent(String.self, forKey: .studio)
-        genre = try container.decodeIfPresent(String.self, forKey: .genre)
-        rating = try container.decodeIfPresent(String.self, forKey: .rating)
-        runtimeMinutes = try container.decodeIfPresent(Int.self, forKey: .runtimeMinutes)
-        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
-        status = try container.decode(String.self, forKey: .status)
+        title = container.decodeFlexibleString(forKey: .title, default: "Untitled")
+        director = container.decodeFlexibleOptionalString(forKey: .director)
+        cast = container.decodeFlexibleOptionalString(forKey: .cast)
+        yearReleased = container.decodeFlexibleOptionalInt(forKey: .yearReleased)
+        studio = container.decodeFlexibleOptionalString(forKey: .studio)
+        genre = container.decodeFlexibleOptionalString(forKey: .genre)
+        rating = container.decodeFlexibleOptionalString(forKey: .rating)
+        runtimeMinutes = container.decodeFlexibleOptionalInt(forKey: .runtimeMinutes)
+        imageUrl = container.decodeFlexibleOptionalString(forKey: .imageUrl)
+        status = container.decodeFlexibleString(forKey: .status, default: "owned")
     }
 }
 
@@ -173,6 +173,17 @@ struct GamesResponse: Codable {
 struct MoviesResponse: Codable {
     let success: Bool
     let movies: [Movie]
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case movies
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = (try? container.decode(Bool.self, forKey: .success)) ?? false
+        movies = (try? container.decode([Movie].self, forKey: .movies)) ?? []
+    }
 }
 
 struct BorrowersResponse: Codable {
@@ -253,6 +264,28 @@ private extension KeyedDecodingContainer {
 
         if let boolValue = try? decodeIfPresent(Bool.self, forKey: key) {
             return String(boolValue)
+        }
+
+        return nil
+    }
+
+    func decodeFlexibleOptionalInt(forKey key: K) -> Int? {
+        guard contains(key) else {
+            return nil
+        }
+
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key) {
+            return intValue
+        }
+
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key) {
+            return Int(doubleValue)
+        }
+
+        if let stringValue = try? decodeIfPresent(String.self, forKey: key),
+           let stringValue,
+           let intValue = Int(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return intValue
         }
 
         return nil
