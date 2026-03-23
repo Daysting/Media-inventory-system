@@ -6,14 +6,12 @@ extension Notification.Name {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusItem: NSStatusItem?
     var notificationManager: NotificationManager?
     var searchIndexer: SearchIndexer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         configureApplicationIcon()
         emitDiagnostic("Local mode enabled: using native SQLite datastore")
-        setupMenuBar()
         setupNotificationManager()
         if shouldEnableSpotlightIndexing() {
             setupSpotlightIntegration()
@@ -26,37 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let iconImage = NSImage(named: "AppIcon") {
             NSApp.applicationIconImage = iconImage
         }
-    }
-
-    // MARK: - Menu Bar
-    private func setupMenuBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "book.fill", accessibilityDescription: "Daysting's Home Inventory System")
-            button.imagePosition = .imageLeading
-        }
-
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Dashboard", action: #selector(showDashboard), keyEquivalent: "d"))
-        menu.addItem(NSMenuItem(title: "Books", action: #selector(showBooks), keyEquivalent: "b"))
-        menu.addItem(NSMenuItem(title: "Video Games", action: #selector(showGames), keyEquivalent: "g"))
-        menu.addItem(NSMenuItem(title: "Movies", action: #selector(showMovies), keyEquivalent: "m"))
-        menu.addItem(NSMenuItem(title: "Electronics", action: #selector(showElectronics), keyEquivalent: "e"))
-
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate), keyEquivalent: "q"))
-        statusItem?.menu = menu
-    }
-
-    @objc private func showDashboard() {}
-    @objc private func showBooks() {}
-    @objc private func showGames() {}
-    @objc private func showMovies() {}
-    @objc private func showElectronics() {}
-    @objc private func showPreferences() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     // MARK: - Notifications
