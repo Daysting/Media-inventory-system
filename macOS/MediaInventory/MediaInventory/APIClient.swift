@@ -2,6 +2,8 @@ import Foundation
 import Combine
 
 class APIClient: ObservableObject {
+    static let defaultBaseURL = "http://127.0.0.1:5000/api"
+
     @Published var books: [Book] = []
     @Published var games: [Game] = []
     @Published var movies: [Movie] = []
@@ -11,7 +13,7 @@ class APIClient: ObservableObject {
     @Published var errorMessage: String?
     @Published var showNewBookSheet = false
     
-    private let baseURL = "http://localhost:5000/api"
+    private let baseURL = APIClient.defaultBaseURL
     private let session = URLSession.shared
     
     // MARK: - Books
@@ -120,30 +122,25 @@ class APIClient: ObservableObject {
             return
         }
 
-        session.dataTask(with: url) { [weak self] data, _, error in
+        session.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self else { return }
 
-                if let error {
-                    self.errorMessage = error.localizedDescription
+                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: "/movies") {
+                case .failure(let validationError):
+                    self.errorMessage = validationError.localizedDescription
                     self.isLoading = false
                     return
-                }
-
-                guard let data else {
-                    self.errorMessage = URLError(.zeroByteResource).localizedDescription
-                    self.isLoading = false
-                    return
-                }
-
-                do {
-                    let parsedMovies = try self.parseMoviesResponse(data: data)
-                    self.movies = parsedMovies
-                    self.isLoading = false
-                } catch {
-                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
-                    self.errorMessage = "Failed to decode /movies: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
-                    self.isLoading = false
+                case .success(let validData):
+                    do {
+                        let parsedMovies = try self.parseMoviesResponse(data: validData)
+                        self.movies = parsedMovies
+                        self.isLoading = false
+                    } catch {
+                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                        self.errorMessage = "Failed to decode /movies: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                        self.isLoading = false
+                    }
                 }
             }
         }.resume()
@@ -191,30 +188,25 @@ class APIClient: ObservableObject {
             return
         }
 
-        session.dataTask(with: url) { [weak self] data, _, error in
+        session.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self else { return }
 
-                if let error {
-                    self.errorMessage = error.localizedDescription
+                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: "/borrowers") {
+                case .failure(let validationError):
+                    self.errorMessage = validationError.localizedDescription
                     self.isLoading = false
                     return
-                }
-
-                guard let data else {
-                    self.errorMessage = URLError(.zeroByteResource).localizedDescription
-                    self.isLoading = false
-                    return
-                }
-
-                do {
-                    let parsedBorrowers = try self.parseBorrowersResponse(data: data)
-                    self.borrowers = parsedBorrowers
-                    self.isLoading = false
-                } catch {
-                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
-                    self.errorMessage = "Failed to decode /borrowers: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
-                    self.isLoading = false
+                case .success(let validData):
+                    do {
+                        let parsedBorrowers = try self.parseBorrowersResponse(data: validData)
+                        self.borrowers = parsedBorrowers
+                        self.isLoading = false
+                    } catch {
+                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                        self.errorMessage = "Failed to decode /borrowers: \(error.localizedDescription). Payload: \(String(payload.prefix(500)))"
+                        self.isLoading = false
+                    }
                 }
             }
         }.resume()
@@ -259,30 +251,26 @@ class APIClient: ObservableObject {
         
         session.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    completion(.failure(error))
+                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
+                case .failure(let validationError):
+                    completion(.failure(validationError))
                     return
-                }
-                
-                guard let data = data else {
-                    completion(.failure(URLError(.zeroByteResource)))
-                    return
-                }
-                
-                do {
-                    let decoded = try JSONDecoder().decode(T.self, from: data)
-                    completion(.success(decoded))
-                } catch {
-                    let payload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
-                    let snippet = String(payload.prefix(500))
-                    let detailedError = NSError(
-                        domain: "APIClient.Decoding",
-                        code: 1001,
-                        userInfo: [
-                            NSLocalizedDescriptionKey: "Failed to decode \(endpoint): \(error.localizedDescription)\nPayload: \(snippet)"
-                        ]
-                    )
-                    completion(.failure(detailedError))
+                case .success(let validData):
+                    do {
+                        let decoded = try JSONDecoder().decode(T.self, from: validData)
+                        completion(.success(decoded))
+                    } catch {
+                        let payload = String(data: validData, encoding: .utf8) ?? "<non-utf8 payload>"
+                        let snippet = String(payload.prefix(500))
+                        let detailedError = NSError(
+                            domain: "APIClient.Decoding",
+                            code: 1001,
+                            userInfo: [
+                                NSLocalizedDescriptionKey: "Failed to decode \(endpoint): \(error.localizedDescription)\nPayload: \(snippet)"
+                            ]
+                        )
+                        completion(.failure(detailedError))
+                    }
                 }
             }
         }.resume()
@@ -308,21 +296,16 @@ class APIClient: ObservableObject {
         
         session.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let data = data else {
-                    completion(.failure(URLError(.zeroByteResource)))
-                    return
-                }
-                
-                do {
-                    let decoded = try JSONDecoder().decode(SuccessResponse.self, from: data)
-                    completion(.success(decoded))
-                } catch {
-                    completion(.failure(error))
+                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
+                case .failure(let validationError):
+                    completion(.failure(validationError))
+                case .success(let validData):
+                    do {
+                        let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
+                        completion(.success(decoded))
+                    } catch {
+                        completion(.failure(error))
+                    }
                 }
             }
         }.resume()
@@ -339,24 +322,48 @@ class APIClient: ObservableObject {
         
         session.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let data = data else {
-                    completion(.failure(URLError(.zeroByteResource)))
-                    return
-                }
-                
-                do {
-                    let decoded = try JSONDecoder().decode(SuccessResponse.self, from: data)
-                    completion(.success(decoded))
-                } catch {
-                    completion(.failure(error))
+                switch self.validatedResponseData(data: data, response: response, error: error, endpoint: endpoint) {
+                case .failure(let validationError):
+                    completion(.failure(validationError))
+                case .success(let validData):
+                    do {
+                        let decoded = try JSONDecoder().decode(SuccessResponse.self, from: validData)
+                        completion(.success(decoded))
+                    } catch {
+                        completion(.failure(error))
+                    }
                 }
             }
         }.resume()
+    }
+
+    private func validatedResponseData(data: Data?, response: URLResponse?, error: Error?, endpoint: String) -> Result<Data, Error> {
+        if let error {
+            return .failure(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return .failure(URLError(.badServerResponse))
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let payload = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<empty payload>"
+            let snippet = String(payload.prefix(500))
+            let httpError = NSError(
+                domain: "APIClient.HTTP",
+                code: httpResponse.statusCode,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Request to \(endpoint) failed with HTTP \(httpResponse.statusCode). Payload: \(snippet)"
+                ]
+            )
+            return .failure(httpError)
+        }
+
+        guard let data else {
+            return .failure(URLError(.zeroByteResource))
+        }
+
+        return .success(data)
     }
 
     private func parseBorrowersResponse(data: Data) throws -> [Borrower] {

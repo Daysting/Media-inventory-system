@@ -145,7 +145,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func isBackendReachable() -> Bool {
-        guard let url = URL(string: "http://localhost:5000/api/books") else {
+        guard let url = URL(string: APIClient.defaultBaseURL + "/books") else {
             return false
         }
 
