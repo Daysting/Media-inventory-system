@@ -36,9 +36,15 @@ struct GamesView: View {
             
             Table(filteredGames) {
                 TableColumn("Title", value: \.title)
-                TableColumn("Developer", value: \.developer ?? "-")
-                TableColumn("Platform", value: \.platform ?? "-")
-                TableColumn("Genre", value: \.genre ?? "-")
+                TableColumn("Developer") { game in
+                    Text(game.developer ?? "-")
+                }
+                TableColumn("Platform") { game in
+                    Text(game.platform ?? "-")
+                }
+                TableColumn("Genre") { game in
+                    Text(game.genre ?? "-")
+                }
                 TableColumn("Status") { game in
                     Badge(game.status)
                 }
