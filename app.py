@@ -461,6 +461,15 @@ def get_overdue_items_report():
         return jsonify({'success': False, 'error': str(e)})
 
 
+@app.route('/api/reports/most-popular', methods=['GET'])
+def get_most_popular_report():
+    try:
+        report = system.get_most_popular()
+        return jsonify({'success': True, 'popular': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 # Barcode generation endpoints
 @app.route('/api/barcodes/generate', methods=['GET'])
 def generate_barcode():

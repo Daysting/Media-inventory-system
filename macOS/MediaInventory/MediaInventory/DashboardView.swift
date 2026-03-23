@@ -5,86 +5,61 @@ struct DashboardView: View {
     var navigate: (ContentView.Tab) -> Void = { _ in }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
 
-            // MARK: Stat cards
-            Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 16) {
-                GridRow {
-                    ClickableStatCard(icon: "📚", title: "Books",
-                                      value: String(apiClient.books.count)) { navigate(.books) }
-                    ClickableStatCard(icon: "🎮", title: "Video Games",
-                                      value: String(apiClient.games.count)) { navigate(.games) }
-                    ClickableStatCard(icon: "🎬", title: "Movies",
-                                      value: String(apiClient.movies.count)) { navigate(.movies) }
-                    ClickableStatCard(icon: "👥", title: "Borrowers",
-                                      value: String(apiClient.borrowers.count)) { navigate(.borrowers) }
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-
-            // MARK: Entry lists
-            DashboardListSection(title: "Books", systemIcon: "book.fill",
-                                 onViewAll: { navigate(.books) }) {
-                if apiClient.books.isEmpty {
-                    DashboardEmptyRow(message: "No books in collection yet")
-                } else {
-                    ForEach(apiClient.books) { book in
-                        DashboardEntryRow(
-                            primary: book.title,
-                            secondary: book.author,
-                            badge: book.status
-                        )
+                // MARK: Stat cards
+                Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 16) {
+                    GridRow {
+                        ClickableStatCard(icon: "📚", title: "Books",
+                                          value: String(apiClient.books.count)) { navigate(.books) }
+                        ClickableStatCard(icon: "🎮", title: "Video Games",
+                                          value: String(apiClient.games.count)) { navigate(.games) }
+                        ClickableStatCard(icon: "🎬", title: "Movies",
+                                          value: String(apiClient.movies.count)) { navigate(.movies) }
+                        ClickableStatCard(icon: "👥", title: "Borrowers",
+                                          value: String(apiClient.borrowers.count)) { navigate(.borrowers) }
                     }
                 }
-            }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
 
-            DashboardListSection(title: "Video Games", systemIcon: "gamecontroller.fill",
-                                 onViewAll: { navigate(.games) }) {
-                if apiClient.games.isEmpty {
-                    DashboardEmptyRow(message: "No games in collection yet")
-                } else {
-                    ForEach(apiClient.games) { game in
-                        DashboardEntryRow(
-                            primary: game.title,
-                            secondary: game.platform,
-                            badge: game.status
-                        )
+                // MARK: Most Popular
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Most Popular")
+                            .font(.system(size: 16, weight: .semibold))
+                        Spacer()
+                        Text("Based on checkout history")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+
+                    if apiClient.isLoadingReport {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                    } else {
+                        Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 16) {
+                            GridRow {
+                                PopularItemCard(icon: "📚", category: "Top Book",
+                                                item: apiClient.mostPopular?.book) { navigate(.books) }
+                                PopularItemCard(icon: "🎮", category: "Top Game",
+                                                item: apiClient.mostPopular?.game) { navigate(.games) }
+                                PopularItemCard(icon: "🎬", category: "Top Movie",
+                                                item: apiClient.mostPopular?.movie) { navigate(.movies) }
+                            }
+                        }
+                        .padding(.horizontal, 20)
                     }
                 }
-            }
 
-            DashboardListSection(title: "Movies", systemIcon: "film.fill",
-                                 onViewAll: { navigate(.movies) }) {
-                if apiClient.movies.isEmpty {
-                    DashboardEmptyRow(message: "No movies in collection yet")
-                } else {
-                    ForEach(apiClient.movies) { movie in
-                        DashboardEntryRow(
-                            primary: movie.title,
-                            secondary: movie.director,
-                            badge: movie.status
-                        )
-                    }
-                }
+                Spacer(minLength: 20)
             }
-
-            DashboardListSection(title: "Borrowers", systemIcon: "person.2.fill",
-                                 onViewAll: { navigate(.borrowers) }) {
-                if apiClient.borrowers.isEmpty {
-                    DashboardEmptyRow(message: "No borrowers registered yet")
-                } else {
-                    ForEach(apiClient.borrowers) { borrower in
-                        DashboardEntryRow(
-                            primary: borrower.fullName,
-                            secondary: borrower.phoneNumber ?? borrower.email,
-                            badge: nil
-                        )
-                    }
-                }
-            }
-
-            Spacer(minLength: 20)
+        }
+        .onAppear {
+            apiClient.fetchMostPopular()
         }
     }
 }
@@ -132,92 +107,79 @@ struct ClickableStatCard: View {
     }
 }
 
-// MARK: - Dashboard List Section
+// MARK: - Popular Item Card
 
-struct DashboardListSection<Content: View>: View {
-    let title: String
-    let systemIcon: String
-    let onViewAll: () -> Void
-    @ViewBuilder let content: Content
+struct PopularItemCard: View {
+    let icon: String
+    let category: String
+    let item: PopularItem?
+    let action: () -> Void
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Section header
-            Button(action: onViewAll) {
-                HStack(spacing: 8) {
-                    Image(systemName: systemIcon)
-                        .font(.system(size: 13))
-                        .foregroundColor(.blue)
-                    Text(title)
-                        .font(.system(size: 14, weight: .semibold))
-                    Spacer()
-                    Text("View All")
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
-                        .foregroundColor(.blue)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(PlainButtonStyle())
-
-            Divider()
-
-            content
-        }
-        .background(Color(nsColor: NSColor.controlBackgroundColor))
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
-        .padding(.horizontal, 20)
-    }
-}
-
-// MARK: - Dashboard Entry Row
-
-struct DashboardEntryRow: View {
-    let primary: String
-    let secondary: String?
-    let badge: String?
+    @State private var isHovering = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(primary)
-                        .font(.system(size: 13))
-                        .lineLimit(1)
-                    if let secondary, !secondary.isEmpty {
-                        Text(secondary)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack {
+                    AsyncImage(url: {
+                        guard let s = item?.imageUrl else { return nil }
+                        return URL(string: s)
+                    }()) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        ZStack {
+                            Color.gray.opacity(0.10)
+                            Text(icon).font(.system(size: 44))
+                        }
                     }
                 }
-                Spacer()
-                if let badge {
-                    Badge(badge)
+                .frame(height: 160)
+                .clipped()
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(category)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.8)
+                    if let item {
+                        Text(item.title)
+                            .font(.system(size: 14, weight: .semibold))
+                            .lineLimit(2)
+                        if !item.subtitle.isEmpty {
+                            Text(item.subtitle)
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                        Label("\(item.checkoutCount) checkout\(item.checkoutCount == 1 ? "" : "s")",
+                              systemImage: "arrow.up.right.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.blue)
+                    } else {
+                        Text("No items in collection")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .padding(12)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            Divider().padding(.leading, 16)
+            .background(
+                isHovering
+                    ? Color.blue.opacity(0.05)
+                    : Color(nsColor: NSColor.controlBackgroundColor)
+            )
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(isHovering ? 0.10 : 0.05),
+                    radius: isHovering ? 6 : 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isHovering ? Color.blue.opacity(0.30) : Color.clear, lineWidth: 1.5)
+            )
         }
-    }
-}
-
-// MARK: - Dashboard Empty Row
-
-struct DashboardEmptyRow: View {
-    let message: String
-
-    var body: some View {
-        Text(message)
-            .font(.system(size: 12))
-            .foregroundColor(.secondary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+        .buttonStyle(PlainButtonStyle())
+        .onHover { isHovering = $0 }
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
     }
 }
 

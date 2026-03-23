@@ -542,6 +542,64 @@ def get_overdue_items():
     conn.close()
     return new_id
 
+
+def get_most_popular():
+    """Get the most checked-out book, video game, and movie."""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT b.id, b.title, b.author, b.image_url, COUNT(ch.id) as checkout_count
+        FROM books b
+        LEFT JOIN checkout_history ch ON ch.media_id = b.id AND ch.media_type = 'books'
+        GROUP BY b.id
+        ORDER BY checkout_count DESC, b.title ASC
+        LIMIT 1
+    ''')
+    book_row = cursor.fetchone()
+    book = {
+        'id': book_row[0], 'title': book_row[1],
+        'subtitle': book_row[2] or '',
+        'image_url': book_row[3],
+        'checkout_count': book_row[4]
+    } if book_row else None
+
+    cursor.execute('''
+        SELECT vg.id, vg.title, vg.platform, vg.image_url, COUNT(ch.id) as checkout_count
+        FROM video_games vg
+        LEFT JOIN checkout_history ch ON ch.media_id = vg.id AND ch.media_type = 'video_games'
+        GROUP BY vg.id
+        ORDER BY checkout_count DESC, vg.title ASC
+        LIMIT 1
+    ''')
+    game_row = cursor.fetchone()
+    game = {
+        'id': game_row[0], 'title': game_row[1],
+        'subtitle': game_row[2] or '',
+        'image_url': game_row[3],
+        'checkout_count': game_row[4]
+    } if game_row else None
+
+    cursor.execute('''
+        SELECT mv.id, mv.title, mv.director, mv.image_url, COUNT(ch.id) as checkout_count
+        FROM movies mv
+        LEFT JOIN checkout_history ch ON ch.media_id = mv.id AND ch.media_type = 'movies'
+        GROUP BY mv.id
+        ORDER BY checkout_count DESC, mv.title ASC
+        LIMIT 1
+    ''')
+    movie_row = cursor.fetchone()
+    movie = {
+        'id': movie_row[0], 'title': movie_row[1],
+        'subtitle': movie_row[2] or '',
+        'image_url': movie_row[3],
+        'checkout_count': movie_row[4]
+    } if movie_row else None
+
+    conn.close()
+    return {'book': book, 'game': game, 'movie': movie}
+
+
 def add_book(title, author=None, year_published=None, publisher=None, fiction_nonfiction=None, genre=None, description=None, image_url=None, status='owned'):
     """Add a new book to the inventory."""
     conn = connect_to_database()

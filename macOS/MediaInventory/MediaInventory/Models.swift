@@ -385,3 +385,17 @@ struct OverdueItem: Identifiable {
         return Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
     }
 }
+
+struct PopularItem {
+    let id: String
+    let title: String
+    let subtitle: String
+    let imageUrl: String?
+    let checkoutCount: Int
+}
+
+struct MostPopularReport {
+    let book: PopularItem?
+    let game: PopularItem?
+    let movie: PopularItem?
+}

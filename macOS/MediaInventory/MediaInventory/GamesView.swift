@@ -34,31 +34,24 @@ struct GamesView: View {
             .cornerRadius(8)
             .padding(20)
             
-            Table(filteredGames) {
-                TableColumn("Title", value: \.title)
-                TableColumn("Developer") { game in
-                    Text(game.developer ?? "-")
-                }
-                TableColumn("Platform") { game in
-                    Text(game.platform ?? "-")
-                }
-                TableColumn("Genre") { game in
-                    Text(game.genre ?? "-")
-                }
-                TableColumn("Status") { game in
-                    Badge(game.status)
-                }
-                TableColumn("") { game in
-                    Button(action: { apiClient.deleteGame(id: game.id) }) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14))
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 160, maximum: 200))],
+                    spacing: 16
+                ) {
+                    ForEach(filteredGames) { game in
+                        MediaCard(
+                            imageUrl: game.imageUrl,
+                            title: game.title,
+                            subtitle: game.platform,
+                            status: game.status
+                        ) {
+                            apiClient.deleteGame(id: game.id)
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
+                .padding(20)
             }
-            .padding(20)
-            
-            Spacer()
         }
         .sheet(isPresented: $showingAddForm) {
             AddGameForm(isPresented: $showingAddForm)

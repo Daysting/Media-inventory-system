@@ -42,6 +42,7 @@ class APIClient: ObservableObject {
     @Published var checkoutHistoryEntries: [CheckoutHistoryEntry] = []
     @Published var genreDistribution: GenreDistributionReport?
     @Published var overdueItems: [OverdueItem] = []
+    @Published var mostPopular: MostPopularReport?
     @Published var isLoadingReport = false
 
     @Published var isLoading = false
@@ -657,6 +658,21 @@ class APIClient: ObservableObject {
         }
     }
 
+    func fetchMostPopular() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/most-popular") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.mostPopular = try self.parseMostPopular(data: data) }
+                catch { self.errorMessage = "Most popular decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
     // MARK: - Report Parsers
 
     private func parseInventorySummary(data: Data) throws -> InventorySummaryReport {
@@ -761,5 +777,31 @@ class APIClient: ObservableObject {
                 checkoutDate: stringValue(item["checkout_date"]) ?? ""
             )
         }
+    }
+
+    private func parseMostPopular(data: Data) throws -> MostPopularReport {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let popular = root["popular"] as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+
+        func parseItem(_ key: String) -> PopularItem? {
+            guard let item = popular[key] as? [String: Any],
+                  let title = stringValue(item["title"]) else { return nil }
+            return PopularItem(
+                id:            stringValue(item["id"]) ?? UUID().uuidString,
+                title:         title,
+                subtitle:      stringValue(item["subtitle"]) ?? "",
+                imageUrl:      stringValue(item["image_url"]),
+                checkoutCount: intValue(item["checkout_count"]) ?? 0
+            )
+        }
+
+        return MostPopularReport(
+            book:  parseItem("book"),
+            game:  parseItem("game"),
+            movie: parseItem("movie")
+        )
     }
 }

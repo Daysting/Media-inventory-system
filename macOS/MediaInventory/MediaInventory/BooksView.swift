@@ -38,34 +38,24 @@ struct BooksView: View {
             .cornerRadius(8)
             .padding(20)
             
-            // Books Table
-            Table(filteredBooks) {
-                TableColumn("Title", value: \.title)
-                TableColumn("Author") { book in
-                    Text(book.author ?? "-")
-                }
-                TableColumn("Genre") { book in
-                    Text(book.genre ?? "-")
-                }
-                TableColumn("Year") { book in
-                    Text(String(book.yearPublished ?? 0))
-                }
-                TableColumn("Status") { book in
-                    Badge(book.status)
-                }
-                TableColumn("") { book in
-                    HStack(spacing: 8) {
-                        Button(action: { apiClient.deleteBook(id: book.id) }) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 14))
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 160, maximum: 200))],
+                    spacing: 16
+                ) {
+                    ForEach(filteredBooks) { book in
+                        MediaCard(
+                            imageUrl: book.imageUrl,
+                            title: book.title,
+                            subtitle: book.author,
+                            status: book.status
+                        ) {
+                            apiClient.deleteBook(id: book.id)
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
+                .padding(20)
             }
-            .padding(20)
-            
-            Spacer()
         }
         .sheet(isPresented: $showingAddForm) {
             AddBookForm(isPresented: $showingAddForm)
@@ -189,6 +179,75 @@ struct Badge: View {
             .background(statusColor.opacity(0.2))
             .foregroundColor(statusColor)
             .cornerRadius(4)
+    }
+}
+
+// MARK: - Media Card
+
+struct MediaCard: View {
+    let imageUrl: String?
+    let title: String
+    let subtitle: String?
+    let status: String?
+    let onDelete: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                AsyncImage(url: imageUrl.flatMap { URL(string: $0) }) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    ZStack {
+                        Color.gray.opacity(0.12)
+                        Image(systemName: "photo")
+                            .font(.system(size: 32))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(height: 180)
+                .clipped()
+
+                if isHovering {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                            .padding(6)
+                            .background(Color.red.opacity(0.85))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(8)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(2)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                if let status {
+                    Badge(status).padding(.top, 2)
+                }
+            }
+            .padding(10)
+        }
+        .background(Color(nsColor: NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+        .shadow(
+            color: Color.black.opacity(isHovering ? 0.12 : 0.05),
+            radius: isHovering ? 8 : 3,
+            x: 0, y: 2
+        )
+        .onHover { isHovering = $0 }
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
     }
 }
 

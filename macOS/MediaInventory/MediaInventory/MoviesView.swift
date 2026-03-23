@@ -37,31 +37,24 @@ struct MoviesView: View {
             .cornerRadius(8)
             .padding(20)
             
-            Table(filteredMovies) {
-                TableColumn("Title", value: \.title)
-                TableColumn("Director") { movie in
-                    Text(movie.director ?? "-")
-                }
-                TableColumn("Genre") { movie in
-                    Text(movie.genre ?? "-")
-                }
-                TableColumn("Rating") { movie in
-                    Text(movie.rating ?? "-")
-                }
-                TableColumn("Status") { movie in
-                    Badge(movie.status)
-                }
-                TableColumn("") { movie in
-                    Button(action: { apiClient.deleteMovie(id: movie.id) }) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14))
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 160, maximum: 200))],
+                    spacing: 16
+                ) {
+                    ForEach(filteredMovies) { movie in
+                        MediaCard(
+                            imageUrl: movie.imageUrl,
+                            title: movie.title,
+                            subtitle: movie.director,
+                            status: movie.status
+                        ) {
+                            apiClient.deleteMovie(id: movie.id)
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
+                .padding(20)
             }
-            .padding(20)
-            
-            Spacer()
         }
         .sheet(isPresented: $showingAddForm) {
             AddMovieForm(isPresented: $showingAddForm)
