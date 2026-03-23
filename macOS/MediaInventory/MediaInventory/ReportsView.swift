@@ -115,7 +115,6 @@ struct ReportsView: View {
 
     @ViewBuilder
     private func printPreviewContent() -> some View {
-        let now = Date()
         switch selectedReport {
         case .inventorySummary:
             if let s = apiClient.inventorySummary {
