@@ -35,7 +35,15 @@ class APIClient: ObservableObject {
     @Published var games: [Game] = []
     @Published var movies: [Movie] = []
     @Published var borrowers: [Borrower] = []
-    
+
+    // MARK: - Report State
+    @Published var inventorySummary: InventorySummaryReport?
+    @Published var borrowerActivity: [BorrowerActivityEntry] = []
+    @Published var checkoutHistoryEntries: [CheckoutHistoryEntry] = []
+    @Published var genreDistribution: GenreDistributionReport?
+    @Published var overdueItems: [OverdueItem] = []
+    @Published var isLoadingReport = false
+
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showNewBookSheet = false
@@ -570,5 +578,188 @@ class APIClient: ObservableObject {
             return Int(string.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return nil
+    }
+
+    // MARK: - Reports
+
+    func fetchInventorySummary() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/inventory-summary") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.inventorySummary = try self.parseInventorySummary(data: data) }
+                catch { self.errorMessage = "Summary decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func fetchBorrowerActivity() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/borrower-activity") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.borrowerActivity = try self.parseBorrowerActivity(data: data) }
+                catch { self.errorMessage = "Borrower activity decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func fetchCheckoutHistoryReport() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/checkout-history") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.checkoutHistoryEntries = try self.parseCheckoutHistory(data: data) }
+                catch { self.errorMessage = "Checkout history decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func fetchGenreDistribution() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/genre-distribution") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.genreDistribution = try self.parseGenreDistribution(data: data) }
+                catch { self.errorMessage = "Genre distribution decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func fetchOverdueItems() {
+        isLoadingReport = true
+        requestData(endpoint: "/reports/overdue-items") { [weak self] result in
+            guard let self else { return }
+            self.isLoadingReport = false
+            switch result {
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            case .success(let data):
+                do { self.overdueItems = try self.parseOverdueItems(data: data) }
+                catch { self.errorMessage = "Overdue items decode error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    // MARK: - Report Parsers
+
+    private func parseInventorySummary(data: Data) throws -> InventorySummaryReport {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let summary = root["summary"] as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+
+        func stats(_ key: String) -> InventorySummaryReport.MediaStats {
+            let d = summary[key] as? [String: Any] ?? [:]
+            return InventorySummaryReport.MediaStats(
+                total: intValue(d["total"]) ?? 0,
+                owned: intValue(d["owned"]) ?? 0
+            )
+        }
+
+        let checkouts = summary["checkouts"] as? [String: Any] ?? [:]
+        let borrowers = summary["borrowers"] as? [String: Any] ?? [:]
+
+        return InventorySummaryReport(
+            books:                stats("books"),
+            videoGames:           stats("video_games"),
+            movies:               stats("movies"),
+            borrowersTotal:       intValue(borrowers["total"]) ?? 0,
+            currentlyCheckedOut:  intValue(checkouts["currently_checked_out"]) ?? 0,
+            totalCheckoutHistory: intValue(checkouts["total_history"]) ?? 0
+        )
+    }
+
+    private func parseBorrowerActivity(data: Data) throws -> [BorrowerActivityEntry] {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let items = root["borrowers"] as? [[String: Any]] else {
+            throw URLError(.cannotParseResponse)
+        }
+        return items.map { item in
+            BorrowerActivityEntry(
+                id:                   stringValue(item["id"]) ?? UUID().uuidString,
+                name:                 stringValue(item["name"]) ?? "—",
+                currentlyCheckedOut:  intValue(item["currently_checked_out"]) ?? 0,
+                totalReturned:        intValue(item["total_returned"]) ?? 0,
+                lastActivity:         stringValue(item["last_activity"]) ?? ""
+            )
+        }
+    }
+
+    private func parseCheckoutHistory(data: Data) throws -> [CheckoutHistoryEntry] {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let items = root["history"] as? [[String: Any]] else {
+            throw URLError(.cannotParseResponse)
+        }
+        return items.map { item in
+            CheckoutHistoryEntry(
+                id:           stringValue(item["id"]) ?? UUID().uuidString,
+                borrowerName: stringValue(item["borrower_name"]) ?? "—",
+                mediaTitle:   stringValue(item["media_title"]) ?? "—",
+                mediaType:    stringValue(item["media_type"]) ?? "",
+                checkoutDate: stringValue(item["checkout_date"]) ?? "",
+                returnDate:   stringValue(item["return_date"]),
+                status:       stringValue(item["status"]) ?? "returned"
+            )
+        }
+    }
+
+    private func parseGenreDistribution(data: Data) throws -> GenreDistributionReport {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let genres = root["genres"] as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+
+        func parseList(_ key: String) -> [GenreCount] {
+            let items = genres[key] as? [[String: Any]] ?? []
+            return items.compactMap { item in
+                guard let name = stringValue(item["genre"]),
+                      let count = intValue(item["count"]) else { return nil }
+                return GenreCount(name: name, count: count)
+            }
+        }
+
+        return GenreDistributionReport(
+            books:      parseList("books"),
+            videoGames: parseList("video_games"),
+            movies:     parseList("movies")
+        )
+    }
+
+    private func parseOverdueItems(data: Data) throws -> [OverdueItem] {
+        let json = try JSONSerialization.jsonObject(with: data)
+        guard let root = json as? [String: Any],
+              let items = root["overdue"] as? [[String: Any]] else {
+            throw URLError(.cannotParseResponse)
+        }
+        return items.map { item in
+            OverdueItem(
+                mediaId:      stringValue(item["media_id"]) ?? "",
+                mediaType:    stringValue(item["media_type"]) ?? "",
+                mediaTitle:   stringValue(item["media_title"]) ?? "—",
+                borrowerName: stringValue(item["borrower_name"]) ?? "—",
+                checkoutDate: stringValue(item["checkout_date"]) ?? ""
+            )
+        }
     }
 }

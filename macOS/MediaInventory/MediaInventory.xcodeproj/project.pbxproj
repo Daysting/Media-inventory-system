@@ -20,6 +20,7 @@
 		A1000001000000000000000B /* MoviesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000010B /* MoviesView.swift */; };
 		A1000001000000000000000C /* BorrowersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000010C /* BorrowersView.swift */; };
 		A1000001000000000000000D /* CheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000000000000010D /* CheckoutView.swift */; };
+		A1000001000000000000000E /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000111 /* ReportsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		A1000001000000000000010B /* MoviesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoviesView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010C /* BorrowersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowersView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010D /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
+		A10000010000000000000111 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
 		A10000010000000000000110 /* MediaInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -76,6 +78,7 @@
 				A1000001000000000000010B /* MoviesView.swift */,
 				A1000001000000000000010C /* BorrowersView.swift */,
 				A1000001000000000000010D /* CheckoutView.swift */,
+				A10000010000000000000111 /* ReportsView.swift */,
 				A1000001000000000000010E /* Info.plist */,
 				A1000001000000000000010F /* MediaInventory.entitlements */,
 			);
@@ -171,6 +174,7 @@
 				A1000001000000000000000B /* MoviesView.swift in Sources */,
 				A1000001000000000000000C /* BorrowersView.swift in Sources */,
 				A1000001000000000000000D /* CheckoutView.swift in Sources */,
+				A1000001000000000000000E /* ReportsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

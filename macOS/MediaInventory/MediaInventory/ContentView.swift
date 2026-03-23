@@ -6,7 +6,7 @@ struct ContentView: View {
     private let errorPanelHeight: CGFloat = 120
     
     enum Tab {
-        case dashboard, books, games, movies, borrowers, checkout
+        case dashboard, books, games, movies, borrowers, checkout, reports
     }
     
     var body: some View {
@@ -78,6 +78,21 @@ struct ContentView: View {
                     action: { selectedTab = .checkout }
                 )
 
+                Text("ANALYTICS")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+
+                NavigationButton(
+                    icon: "chart.bar.fill",
+                    label: "Reports",
+                    isSelected: selectedTab == .reports,
+                    action: { selectedTab = .reports }
+                )
+
                 Spacer()
             }
             .frame(width: 220)
@@ -118,6 +133,8 @@ struct ContentView: View {
                                 BorrowersView()
                             case .checkout:
                                 CheckoutView()
+                            case .reports:
+                                ReportsView()
                             }
                         }
                         .environmentObject(apiClient)
@@ -233,6 +250,7 @@ extension ContentView.Tab {
         case .movies: return "Movies"
         case .borrowers: return "Borrowers"
         case .checkout: return "Checkout & Return"
+        case .reports: return "Reports"
         }
     }
     
@@ -244,6 +262,7 @@ extension ContentView.Tab {
         case .movies: return "Manage your movie collection"
         case .borrowers: return "Manage borrower information"
         case .checkout: return "Manage item checkouts and returns"
+        case .reports: return "Analytics and usage reports"
         }
     }
 }

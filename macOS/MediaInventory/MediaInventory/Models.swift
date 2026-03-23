@@ -324,3 +324,64 @@ private extension KeyedDecodingContainer {
         return nil
     }
 }
+
+// MARK: - Report Models
+
+struct InventorySummaryReport {
+    struct MediaStats {
+        let total: Int
+        let owned: Int
+    }
+    let books: MediaStats
+    let videoGames: MediaStats
+    let movies: MediaStats
+    let borrowersTotal: Int
+    let currentlyCheckedOut: Int
+    let totalCheckoutHistory: Int
+}
+
+struct BorrowerActivityEntry: Identifiable {
+    let id: String
+    let name: String
+    let currentlyCheckedOut: Int
+    let totalReturned: Int
+    let lastActivity: String
+}
+
+struct CheckoutHistoryEntry: Identifiable {
+    let id: String
+    let borrowerName: String
+    let mediaTitle: String
+    let mediaType: String
+    let checkoutDate: String
+    let returnDate: String?
+    let status: String
+}
+
+struct GenreDistributionReport {
+    let books: [GenreCount]
+    let videoGames: [GenreCount]
+    let movies: [GenreCount]
+}
+
+struct GenreCount: Identifiable {
+    var id: String { name }
+    let name: String
+    let count: Int
+}
+
+struct OverdueItem: Identifiable {
+    var id: String { mediaId + borrowerName }
+    let mediaId: String
+    let mediaType: String
+    let mediaTitle: String
+    let borrowerName: String
+    let checkoutDate: String
+
+    var daysOverdue: Int {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        guard let date = fmt.date(from: checkoutDate) else { return 0 }
+        return Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+    }
+}
