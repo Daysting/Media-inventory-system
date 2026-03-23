@@ -1,0 +1,101 @@
+{
+  "" : {
+    "const-values" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.swiftconstvalues",
+    "dependencies" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.d",
+    "diagnostics" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.dia",
+    "emit-module-dependencies" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary-emit-module.dia",
+    "pch" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.swiftdeps"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/APIClient.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/APIClient.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/APIClient.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/APIClient.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/AppDelegate.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/AppDelegate.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/BooksView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BooksView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BooksView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BooksView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/BorrowersView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BorrowersView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BorrowersView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/BorrowersView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/CheckoutView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/CheckoutView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/CheckoutView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/CheckoutView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/ContentView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/DashboardView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DashboardView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DashboardView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DashboardView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/DiagnosticsView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DiagnosticsView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DiagnosticsView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/DiagnosticsView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/ElectronicsView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ElectronicsView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ElectronicsView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ElectronicsView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/GamesView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GamesView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GamesView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GamesView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/MediaInventoryApp.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventoryApp.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventoryApp.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventoryApp.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/Models.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Models.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Models.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Models.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/MoviesView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MoviesView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MoviesView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MoviesView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/NotificationManager.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/NotificationManager.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/NotificationManager.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/NotificationManager.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/PrintableReports.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/PrintableReports.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/PrintableReports.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/PrintableReports.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/ReportsView.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ReportsView.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ReportsView.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/ReportsView.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/SearchIndexer.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/SearchIndexer.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/SearchIndexer.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/SearchIndexer.o"
+  },
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

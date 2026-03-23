@@ -1,0 +1,40 @@
+{
+  "source": "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/MediaInventoryApp.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Check for Updates",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 17
+        }
+      },
+      {
+        "comment": "",
+        "key": "New Book",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 23
+        }
+      },
+      {
+        "comment": "",
+        "key": "When enabled, the app will index items in Spotlight during Debug runs.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enable Spotlight indexing in Debug builds",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 41
+        }
+      }
+    ]
+  },
+  "version": 1
+}

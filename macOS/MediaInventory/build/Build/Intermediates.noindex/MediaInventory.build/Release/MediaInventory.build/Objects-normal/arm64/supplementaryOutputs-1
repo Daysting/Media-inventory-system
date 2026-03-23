@@ -1,0 +1,12 @@
+{
+  "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/MediaInventoryApp.swift" : {
+    "abi-baseline-json" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Daysting_s_Home_Inventory_System.abi.json",
+    "const-values" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.swiftconstvalues",
+    "dependencies" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.d",
+    "diagnostics" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/MediaInventory-primary.dia",
+    "objc-header" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Daysting_s_Home_Inventory_System-Swift.h",
+    "swiftdoc" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Daysting_s_Home_Inventory_System.swiftdoc",
+    "swiftmodule" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Daysting_s_Home_Inventory_System.swiftmodule",
+    "swiftsourceinfo" : "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/build/Build/Intermediates.noindex/MediaInventory.build/Release/MediaInventory.build/Objects-normal/arm64/Daysting_s_Home_Inventory_System.swiftsourceinfo"
+  }
+}
