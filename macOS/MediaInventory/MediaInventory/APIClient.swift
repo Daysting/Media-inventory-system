@@ -60,7 +60,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     rows.append([
@@ -101,7 +101,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
                 self.bindText(stmt, 1, id)
                 self.bindText(stmt, 2, title)
                 self.bindOptionalText(stmt, 3, author)
@@ -111,7 +111,7 @@ class APIClient: ObservableObject {
                 self.bindOptionalText(stmt, 7, genre)
                 self.bindOptionalText(stmt, 8, description)
                 self.bindOptionalText(stmt, 9, imageUrl)
-                self.require(sqlite3_step(stmt) == SQLITE_DONE)
+                try self.require(sqlite3_step(stmt) == SQLITE_DONE, db: db)
             }
             DispatchQueue.main.async { self.fetchBooks() }
         } onError: { error in
@@ -176,7 +176,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     let gameSystem = self.columnText(stmt, 2)
@@ -285,7 +285,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     results.append(
@@ -394,7 +394,7 @@ class APIClient: ObservableObject {
                 let sql = "SELECT id, first_name, last_name, address, phone_number FROM borrowers ORDER BY last_name, first_name"
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     results.append(
@@ -532,7 +532,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     results.append(
@@ -585,7 +585,7 @@ class APIClient: ObservableObject {
                 """
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     results.append(
@@ -620,7 +620,7 @@ class APIClient: ObservableObject {
                 let sql = "SELECT genre, COUNT(*) FROM \(table) WHERE genre IS NOT NULL AND genre != '' GROUP BY genre ORDER BY COUNT(*) DESC"
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
                 while sqlite3_step(stmt) == SQLITE_ROW {
                     let name = self.columnText(stmt, 0) ?? "Unknown"
                     let count = self.columnInt(stmt, 1) ?? 0
@@ -678,7 +678,7 @@ class APIClient: ObservableObject {
 
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
                 self.bindText(stmt, 1, threshold)
 
                 while sqlite3_step(stmt) == SQLITE_ROW {
@@ -710,7 +710,7 @@ class APIClient: ObservableObject {
             func topItem(db: OpaquePointer?, sql: String) throws -> PopularItem? {
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
-                self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK)
+                try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
                 guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
                 return PopularItem(
                     id: self.columnText(stmt, 0) ?? UUID().uuidString,
@@ -877,15 +877,15 @@ class APIClient: ObservableObject {
     private func execute(_ db: OpaquePointer?, sql: String, bind: ((OpaquePointer?) -> Void)? = nil) throws {
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
-        require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+        try require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
         bind?(stmt)
-        require(sqlite3_step(stmt) == SQLITE_DONE, db: db)
+        try require(sqlite3_step(stmt) == SQLITE_DONE, db: db)
     }
 
     private func scalarInt(_ db: OpaquePointer?, sql: String) throws -> Int {
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
-        require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+        try require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
         guard sqlite3_step(stmt) == SQLITE_ROW else { return 0 }
         return Int(sqlite3_column_int(stmt, 0))
     }
@@ -894,7 +894,7 @@ class APIClient: ObservableObject {
         let sql = "SELECT COUNT(*), SUM(CASE WHEN status = 'owned' THEN 1 ELSE 0 END) FROM \(table)"
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
-        require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+        try require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
         guard sqlite3_step(stmt) == SQLITE_ROW else { return (0, 0) }
         let total = Int(sqlite3_column_int(stmt, 0))
         let owned = Int(sqlite3_column_int(stmt, 1))
@@ -938,7 +938,7 @@ class APIClient: ObservableObject {
         let sql = "SELECT id FROM \(table) WHERE id LIKE ? ORDER BY id DESC LIMIT 1"
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
-        require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+        try require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
         bindText(stmt, 1, "\(prefix)%")
 
         var nextNumber = 1
@@ -956,9 +956,9 @@ class APIClient: ObservableObject {
         return try generateMediaID(prefix: "21972", digits: 9, table: "borrowers", db: db)
     }
 
-    private func require(_ condition: Bool, db: OpaquePointer? = nil) {
+    private func require(_ condition: Bool, db: OpaquePointer? = nil) throws {
         if !condition {
-            fatalError(databaseError(db).localizedDescription)
+            throw databaseError(db)
         }
     }
 
@@ -967,7 +967,7 @@ class APIClient: ObservableObject {
         if let db, let cMessage = sqlite3_errmsg(db) {
             message = String(cString: cMessage)
         } else {
-            message = "Unknown SQLite error"
+            message = String(cString: sqlite3_errstr(SQLITE_ERROR))
         }
 
         return NSError(domain: "MediaInventory.SQLite", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
