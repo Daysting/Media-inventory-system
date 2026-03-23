@@ -3,6 +3,7 @@ import SwiftUI
 struct GamesView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var showingAddForm = false
+    @State private var gameToEdit: Game?
     @State private var searchText = ""
     
     var filteredGames: [Game] {
@@ -44,7 +45,8 @@ struct GamesView: View {
                             imageUrl: game.imageUrl,
                             title: game.title,
                             subtitle: game.platform,
-                            status: game.status
+                            status: game.status,
+                            onEdit: { gameToEdit = game }
                         ) {
                             apiClient.deleteGame(id: game.id)
                         }
@@ -55,6 +57,10 @@ struct GamesView: View {
         }
         .sheet(isPresented: $showingAddForm) {
             AddGameForm(isPresented: $showingAddForm)
+                .environmentObject(apiClient)
+        }
+        .sheet(item: $gameToEdit) { game in
+            EditGameForm(game: game)
                 .environmentObject(apiClient)
         }
         .onAppear {
@@ -129,4 +135,72 @@ struct AddGameForm: View {
 #Preview {
     GamesView()
         .environmentObject(APIClient())
+}
+
+struct EditGameForm: View {
+    @EnvironmentObject var apiClient: APIClient
+    @Environment(\.dismiss) private var dismiss
+    let game: Game
+
+    @State private var title: String
+    @State private var platform: String
+    @State private var yearReleased: String
+    @State private var genre: String
+    @State private var imageUrl: String
+
+    init(game: Game) {
+        self.game = game
+        _title = State(initialValue: game.title)
+        _platform = State(initialValue: game.platform ?? "")
+        _yearReleased = State(initialValue: game.yearReleased.map(String.init) ?? "")
+        _genre = State(initialValue: game.genre ?? "")
+        _imageUrl = State(initialValue: game.imageUrl ?? "")
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Video Game")
+                .font(.system(size: 18, weight: .semibold))
+
+            Form {
+                Section("Basic Information") {
+                    TextField("Title *", text: $title)
+                    TextField("Platform", text: $platform)
+                    TextField("Year Released", text: $yearReleased)
+                }
+
+                Section("Details") {
+                    TextField("Genre", text: $genre)
+                }
+
+                Section("Image") {
+                    TextField("Image URL", text: $imageUrl)
+                }
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save Changes") {
+                    apiClient.updateGame(
+                        id: game.id,
+                        title: title,
+                        platform: platform.isEmpty ? nil : platform,
+                        genre: genre.isEmpty ? nil : genre,
+                        yearReleased: Int(yearReleased),
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                    )
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(title.isEmpty)
+            }
+            .padding()
+        }
+        .padding(20)
+        .frame(minWidth: 500, minHeight: 450)
+    }
 }

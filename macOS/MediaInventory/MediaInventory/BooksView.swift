@@ -3,6 +3,7 @@ import SwiftUI
 struct BooksView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var showingAddForm = false
+    @State private var bookToEdit: Book?
     @State private var searchText = ""
     
     var filteredBooks: [Book] {
@@ -48,7 +49,8 @@ struct BooksView: View {
                             imageUrl: book.imageUrl,
                             title: book.title,
                             subtitle: book.author,
-                            status: book.status
+                            status: book.status,
+                            onEdit: { bookToEdit = book }
                         ) {
                             apiClient.deleteBook(id: book.id)
                         }
@@ -59,6 +61,10 @@ struct BooksView: View {
         }
         .sheet(isPresented: $showingAddForm) {
             AddBookForm(isPresented: $showingAddForm)
+                .environmentObject(apiClient)
+        }
+        .sheet(item: $bookToEdit) { book in
+            EditBookForm(book: book)
                 .environmentObject(apiClient)
         }
         .onAppear {
@@ -189,6 +195,7 @@ struct MediaCard: View {
     let title: String
     let subtitle: String?
     let status: String?
+    var onEdit: (() -> Void)?
     let onDelete: () -> Void
 
     @State private var isHovering = false
@@ -210,15 +217,28 @@ struct MediaCard: View {
                 .clipped()
 
                 if isHovering {
-                    Button(action: onDelete) {
-                        Image(systemName: "trash.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
-                            .padding(6)
-                            .background(Color.red.opacity(0.85))
-                            .clipShape(Circle())
+                    HStack(spacing: 4) {
+                        if let onEdit {
+                            Button(action: onEdit) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white)
+                                    .padding(6)
+                                    .background(Color.blue.opacity(0.85))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        Button(action: onDelete) {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                                .padding(6)
+                                .background(Color.red.opacity(0.85))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                     .padding(8)
                 }
             }
@@ -254,4 +274,91 @@ struct MediaCard: View {
 #Preview {
     BooksView()
         .environmentObject(APIClient())
+}
+
+struct EditBookForm: View {
+    @EnvironmentObject var apiClient: APIClient
+    @Environment(\.dismiss) private var dismiss
+    let book: Book
+
+    @State private var title: String
+    @State private var author: String
+    @State private var yearPublished: String
+    @State private var publisher: String
+    @State private var fictionNonfiction: String
+    @State private var genre: String
+    @State private var description: String
+    @State private var imageUrl: String
+
+    init(book: Book) {
+        self.book = book
+        _title = State(initialValue: book.title)
+        _author = State(initialValue: book.author ?? "")
+        _yearPublished = State(initialValue: book.yearPublished.map(String.init) ?? "")
+        _publisher = State(initialValue: book.publisher ?? "")
+        _fictionNonfiction = State(initialValue: book.fictionNonfiction ?? "")
+        _genre = State(initialValue: book.genre ?? "")
+        _description = State(initialValue: book.description ?? "")
+        _imageUrl = State(initialValue: book.imageUrl ?? "")
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Book")
+                .font(.system(size: 18, weight: .semibold))
+
+            Form {
+                Section("Basic Information") {
+                    TextField("Title *", text: $title)
+                    TextField("Author", text: $author)
+                    TextField("Publisher", text: $publisher)
+                    TextField("Year Published", text: $yearPublished)
+                }
+
+                Section("Details") {
+                    Picker("Type", selection: $fictionNonfiction) {
+                        Text("Select...").tag("")
+                        Text("Fiction").tag("Fiction")
+                        Text("Non-Fiction").tag("Non-Fiction")
+                    }
+                    TextField("Genre", text: $genre)
+                }
+
+                Section("Description") {
+                    TextEditor(text: $description)
+                }
+
+                Section("Image") {
+                    TextField("Image URL", text: $imageUrl)
+                }
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save Changes") {
+                    apiClient.updateBook(
+                        id: book.id,
+                        title: title,
+                        author: author.isEmpty ? nil : author,
+                        yearPublished: Int(yearPublished),
+                        publisher: publisher.isEmpty ? nil : publisher,
+                        fictionNonfiction: fictionNonfiction.isEmpty ? nil : fictionNonfiction,
+                        genre: genre.isEmpty ? nil : genre,
+                        description: description.isEmpty ? nil : description,
+                        imageUrl: imageUrl.isEmpty ? nil : imageUrl
+                    )
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(title.isEmpty)
+            }
+            .padding()
+        }
+        .padding(20)
+        .frame(minWidth: 500, minHeight: 600)
+    }
 }

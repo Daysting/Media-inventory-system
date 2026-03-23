@@ -110,7 +110,28 @@ class APIClient: ObservableObject {
             }
         }
     }
-    
+
+    func updateBook(id: String, title: String, author: String?, yearPublished: Int?,
+                    publisher: String?, fictionNonfiction: String?, genre: String?,
+                    description: String?, imageUrl: String?) {
+        let parameters: [String: Any?] = [
+            "title": title,
+            "author": author,
+            "year_published": yearPublished,
+            "publisher": publisher,
+            "fiction_nonfiction": fictionNonfiction,
+            "genre": genre,
+            "description": description,
+            "image_url": imageUrl
+        ]
+        requestData(endpoint: "/books/\(id)", method: "PUT", parameters: parameters) { [weak self] result in
+            switch result {
+            case .success: self?.fetchBooks()
+            case .failure(let error): self?.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     // MARK: - Games
     func fetchGames() {
         isLoading = true
@@ -158,7 +179,24 @@ class APIClient: ObservableObject {
             }
         }
     }
-    
+
+    func updateGame(id: String, title: String, platform: String?, genre: String?,
+                    yearReleased: Int?, imageUrl: String?) {
+        let parameters: [String: Any?] = [
+            "title": title,
+            "platform": platform,
+            "genre": genre,
+            "year_released": yearReleased,
+            "image_url": imageUrl
+        ]
+        requestData(endpoint: "/video_games/\(id)", method: "PUT", parameters: parameters) { [weak self] result in
+            switch result {
+            case .success: self?.fetchGames()
+            case .failure(let error): self?.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     // MARK: - Movies
     func fetchMovies() {
         isLoading = true
@@ -215,7 +253,28 @@ class APIClient: ObservableObject {
             }
         }
     }
-    
+
+    func updateMovie(id: String, title: String, director: String?, cast: String?,
+                     yearReleased: Int?, studio: String?, genre: String?,
+                     rating: String?, imageUrl: String?) {
+        let parameters: [String: Any?] = [
+            "title": title,
+            "director": director,
+            "cast": cast,
+            "year_released": yearReleased,
+            "studio": studio,
+            "genre": genre,
+            "rating": rating,
+            "image_url": imageUrl
+        ]
+        requestData(endpoint: "/movies/\(id)", method: "PUT", parameters: parameters) { [weak self] result in
+            switch result {
+            case .success: self?.fetchMovies()
+            case .failure(let error): self?.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     // MARK: - Borrowers
     func fetchBorrowers() {
         isLoading = true
@@ -269,7 +328,23 @@ class APIClient: ObservableObject {
             }
         }
     }
-    
+
+    func updateBorrower(id: String, firstName: String, lastName: String,
+                        address: String?, phoneNumber: String?) {
+        let parameters: [String: Any?] = [
+            "first_name": firstName,
+            "last_name": lastName,
+            "address": address,
+            "phone_number": phoneNumber
+        ]
+        requestData(endpoint: "/borrowers/\(id)", method: "PUT", parameters: parameters) { [weak self] result in
+            switch result {
+            case .success: self?.fetchBorrowers()
+            case .failure(let error): self?.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     // MARK: - HTTP Methods
     private func fetch<T: Decodable>(endpoint: String, responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
         requestData(endpoint: endpoint) { result in

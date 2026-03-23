@@ -3,6 +3,7 @@ import SwiftUI
 struct BorrowersView: View {
     @EnvironmentObject var apiClient: APIClient
     @State private var showingAddForm = false
+    @State private var borrowerToEdit: Borrower?
     @State private var searchText = ""
     
     var filteredBorrowers: [Borrower] {
@@ -50,11 +51,18 @@ struct BorrowersView: View {
                     Text(borrower.address ?? "-")
                 }
                 TableColumn("") { borrower in
-                    Button(action: { apiClient.deleteBorrower(id: borrower.id) }) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14))
+                    HStack(spacing: 8) {
+                        Button(action: { borrowerToEdit = borrower }) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 14))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Button(action: { apiClient.deleteBorrower(id: borrower.id) }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 14))
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .padding(20)
@@ -63,6 +71,10 @@ struct BorrowersView: View {
         }
         .sheet(isPresented: $showingAddForm) {
             AddBorrowerForm(isPresented: $showingAddForm)
+                .environmentObject(apiClient)
+        }
+        .sheet(item: $borrowerToEdit) { borrower in
+            EditBorrowerForm(borrower: borrower)
                 .environmentObject(apiClient)
         }
         .onAppear {
@@ -128,4 +140,65 @@ struct AddBorrowerForm: View {
 #Preview {
     BorrowersView()
         .environmentObject(APIClient())
+}
+
+struct EditBorrowerForm: View {
+    @EnvironmentObject var apiClient: APIClient
+    @Environment(\.dismiss) private var dismiss
+    let borrower: Borrower
+
+    @State private var firstName: String
+    @State private var lastName: String
+    @State private var phoneNumber: String
+    @State private var address: String
+
+    init(borrower: Borrower) {
+        self.borrower = borrower
+        _firstName = State(initialValue: borrower.firstName)
+        _lastName = State(initialValue: borrower.lastName)
+        _phoneNumber = State(initialValue: borrower.phoneNumber ?? "")
+        _address = State(initialValue: borrower.address ?? "")
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Borrower")
+                .font(.system(size: 18, weight: .semibold))
+
+            Form {
+                Section("Personal Information") {
+                    TextField("First Name *", text: $firstName)
+                    TextField("Last Name *", text: $lastName)
+                }
+
+                Section("Contact Information") {
+                    TextField("Phone Number", text: $phoneNumber)
+                    TextField("Address", text: $address)
+                }
+            }
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Save Changes") {
+                    apiClient.updateBorrower(
+                        id: borrower.id,
+                        firstName: firstName,
+                        lastName: lastName,
+                        address: address.isEmpty ? nil : address,
+                        phoneNumber: phoneNumber.isEmpty ? nil : phoneNumber
+                    )
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(firstName.isEmpty || lastName.isEmpty)
+            }
+            .padding()
+        }
+        .padding(20)
+        .frame(minWidth: 400, minHeight: 400)
+    }
 }
