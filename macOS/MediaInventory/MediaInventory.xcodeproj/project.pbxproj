@@ -25,6 +25,7 @@
 		A10000010000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000113 /* Assets.xcassets */; };
 		A10000010000000000000011 /* ElectronicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000114 /* ElectronicsView.swift */; };
 		A10000010000000000000012 /* PrintableReports.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000115 /* PrintableReports.swift */; };
+		A10000010000000000000013 /* ICloudDatabaseCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 		A10000010000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000010000000000000114 /* ElectronicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicsView.swift; sourceTree = "<group>"; };
 		A10000010000000000000115 /* PrintableReports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintableReports.swift; sourceTree = "<group>"; };
+		A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDatabaseCoordinator.swift; sourceTree = "<group>"; };
 		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
 		A10000010000000000000110 /* MediaInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -75,6 +77,7 @@
 			children = (
 				A10000010000000000000113 /* Assets.xcassets */,
 				A10000010000000000000101 /* MediaInventoryApp.swift */,
+				A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */,
 				A10000010000000000000114 /* ElectronicsView.swift */,
 				A10000010000000000000115 /* PrintableReports.swift */,
 				A10000010000000000000102 /* AppDelegate.swift */,
@@ -191,6 +194,7 @@
 				A1000001000000000000000F /* DiagnosticsView.swift in Sources */,
 				A10000010000000000000011 /* ElectronicsView.swift in Sources */,
 				A10000010000000000000012 /* PrintableReports.swift in Sources */,
+				A10000010000000000000013 /* ICloudDatabaseCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,10 +239,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -258,10 +265,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

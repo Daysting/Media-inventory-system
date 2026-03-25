@@ -2,6 +2,22 @@ import Foundation
 import Combine
 import SQLite3
 
+struct CheckoutAttemptResult {
+    let mediaID: String
+    let success: Bool
+    let message: String
+}
+
+struct CheckoutBatchResult {
+    let borrowerID: String
+    let borrowerName: String
+    let attempts: [CheckoutAttemptResult]
+}
+
+struct ReturnBatchResult {
+    let attempts: [CheckoutAttemptResult]
+}
+
 class APIClient: ObservableObject {
     @Published var books: [Book] = []
     @Published var games: [Game] = []
@@ -29,6 +45,7 @@ class APIClient: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showNewBookSheet = false
+    @Published var lastICloudSyncDate: Date?
 
     private let dbQueue = DispatchQueue(label: "MediaInventory.DatabaseQueue", qos: .userInitiated)
     private static let dateFormatter: DateFormatter = {
@@ -39,13 +56,33 @@ class APIClient: ObservableObject {
         return formatter
     }()
     private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+    private var iCloudChangeObserver: NSObjectProtocol?
 
     init() {
+        let storedSyncTime = UserDefaults.standard.double(forKey: "ICloudLastSyncTimeInterval")
+        if storedSyncTime > 0 {
+            lastICloudSyncDate = Date(timeIntervalSince1970: storedSyncTime)
+        }
+
+        iCloudChangeObserver = NotificationCenter.default.addObserver(
+            forName: .iCloudDatabaseDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshFromExternalDatabaseChange()
+        }
+
         do {
             try ensureDatabaseInitialized()
             migrateExistingRemoteImagesToLocalCache()
         } catch {
             errorMessage = "Failed to initialize database: \(error.localizedDescription)"
+        }
+    }
+
+    deinit {
+        if let iCloudChangeObserver {
+            NotificationCenter.default.removeObserver(iCloudChangeObserver)
         }
     }
 
@@ -587,6 +624,106 @@ class APIClient: ObservableObject {
         }
     }
 
+    // MARK: - Checkout
+    func checkoutMediaBatch(borrowerID: String, mediaIDs: [String], completion: @escaping (CheckoutBatchResult) -> Void) {
+        let normalizedBorrowerID = borrowerID.trimmingCharacters(in: .whitespacesAndNewlines)
+        let limitedIDs = Array(mediaIDs
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .prefix(5))
+
+        runAsync {
+            var borrowerName = ""
+            var attempts: [CheckoutAttemptResult] = []
+
+            try self.withDatabase { db in
+                var borrowerStmt: OpaquePointer?
+                defer { sqlite3_finalize(borrowerStmt) }
+                try self.require(sqlite3_prepare_v2(db, "SELECT first_name, last_name FROM borrowers WHERE id = ?", -1, &borrowerStmt, nil) == SQLITE_OK, db: db)
+                self.bindText(borrowerStmt, 1, normalizedBorrowerID)
+
+                guard sqlite3_step(borrowerStmt) == SQLITE_ROW else {
+                    throw NSError(
+                        domain: "MediaInventory.Checkout",
+                        code: 404,
+                        userInfo: [NSLocalizedDescriptionKey: "Borrower \(normalizedBorrowerID) was not found."]
+                    )
+                }
+
+                let first = self.columnText(borrowerStmt, 0) ?? ""
+                let last = self.columnText(borrowerStmt, 1) ?? ""
+                borrowerName = "\(first) \(last)".trimmingCharacters(in: .whitespaces)
+
+                let now = APIClient.dateFormatter.string(from: Date())
+                for mediaID in limitedIDs {
+                    let attempt = try self.checkoutSingleMedia(db: db, borrowerID: normalizedBorrowerID, mediaID: mediaID, checkoutDate: now)
+                    attempts.append(attempt)
+                }
+            }
+
+            DispatchQueue.main.async {
+                self.fetchBooks()
+                self.fetchGames()
+                self.fetchMovies()
+                self.fetchElectronics()
+                self.fetchCheckoutHistoryReport()
+
+                completion(
+                    CheckoutBatchResult(
+                        borrowerID: normalizedBorrowerID,
+                        borrowerName: borrowerName,
+                        attempts: attempts
+                    )
+                )
+            }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+            completion(
+                CheckoutBatchResult(
+                    borrowerID: normalizedBorrowerID,
+                    borrowerName: "",
+                    attempts: [CheckoutAttemptResult(mediaID: "", success: false, message: error.localizedDescription)]
+                )
+            )
+        }
+    }
+
+    func returnMediaBatch(mediaIDs: [String], completion: @escaping (ReturnBatchResult) -> Void) {
+        let limitedIDs = Array(mediaIDs
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .prefix(5))
+
+        runAsync {
+            var attempts: [CheckoutAttemptResult] = []
+
+            try self.withDatabase { db in
+                let now = APIClient.dateFormatter.string(from: Date())
+                for mediaID in limitedIDs {
+                    let attempt = try self.returnSingleMedia(db: db, mediaID: mediaID, returnDate: now)
+                    attempts.append(attempt)
+                }
+            }
+
+            DispatchQueue.main.async {
+                self.fetchBooks()
+                self.fetchGames()
+                self.fetchMovies()
+                self.fetchElectronics()
+                self.fetchCheckoutHistoryReport()
+
+                completion(ReturnBatchResult(attempts: attempts))
+            }
+        } onError: { error in
+            self.errorMessage = error.localizedDescription
+            completion(
+                ReturnBatchResult(
+                    attempts: [CheckoutAttemptResult(mediaID: "", success: false, message: error.localizedDescription)]
+                )
+            )
+        }
+    }
+
     // MARK: - Reports
     func fetchInventorySummary() {
         isLoadingReport = true
@@ -1072,6 +1209,102 @@ class APIClient: ObservableObject {
         }
     }
 
+    private func checkoutSingleMedia(db: OpaquePointer?, borrowerID: String, mediaID: String, checkoutDate: String) throws -> CheckoutAttemptResult {
+        guard let mediaRecord = try lookupMediaRecord(db: db, mediaID: mediaID) else {
+            return CheckoutAttemptResult(mediaID: mediaID, success: false, message: "Not found")
+        }
+
+        if mediaRecord.status == "checked_out" {
+            return CheckoutAttemptResult(mediaID: mediaID, success: false, message: "Already checked out")
+        }
+
+        try execute(db, sql: "UPDATE \(mediaRecord.tableName) SET status = 'checked_out' WHERE id = ?", bind: { stmt in
+            self.bindText(stmt, 1, mediaID)
+        })
+
+        try execute(db, sql: """
+            INSERT INTO checkout_history (borrower_id, media_id, media_type, checkout_date, status)
+            VALUES (?, ?, ?, ?, 'checked_out')
+        """, bind: { stmt in
+            self.bindText(stmt, 1, borrowerID)
+            self.bindText(stmt, 2, mediaID)
+            self.bindText(stmt, 3, mediaRecord.mediaType)
+            self.bindText(stmt, 4, checkoutDate)
+        })
+
+        return CheckoutAttemptResult(mediaID: mediaID, success: true, message: "Checked out")
+    }
+
+    private func returnSingleMedia(db: OpaquePointer?, mediaID: String, returnDate: String) throws -> CheckoutAttemptResult {
+        guard let mediaRecord = try lookupMediaRecord(db: db, mediaID: mediaID) else {
+            return CheckoutAttemptResult(mediaID: mediaID, success: false, message: "Not found")
+        }
+
+        if mediaRecord.status != "checked_out" {
+            return CheckoutAttemptResult(mediaID: mediaID, success: false, message: "Item is not checked out")
+        }
+
+        var checkoutHistoryID: Int?
+        var historyStmt: OpaquePointer?
+        defer { sqlite3_finalize(historyStmt) }
+        let historySQL = """
+            SELECT id
+            FROM checkout_history
+            WHERE media_id = ? AND media_type = ? AND status = 'checked_out'
+            ORDER BY checkout_date DESC, id DESC
+            LIMIT 1
+        """
+        try require(sqlite3_prepare_v2(db, historySQL, -1, &historyStmt, nil) == SQLITE_OK, db: db)
+        bindText(historyStmt, 1, mediaID)
+        bindText(historyStmt, 2, mediaRecord.mediaType)
+        if sqlite3_step(historyStmt) == SQLITE_ROW {
+            checkoutHistoryID = columnInt(historyStmt, 0)
+        }
+
+        guard let checkoutHistoryID else {
+            return CheckoutAttemptResult(mediaID: mediaID, success: false, message: "No active checkout record")
+        }
+
+        try execute(db, sql: "UPDATE \(mediaRecord.tableName) SET status = 'owned' WHERE id = ?", bind: { stmt in
+            self.bindText(stmt, 1, mediaID)
+        })
+
+        try execute(db, sql: """
+            UPDATE checkout_history
+            SET status = 'returned', return_date = ?
+            WHERE id = ?
+        """, bind: { stmt in
+            self.bindText(stmt, 1, returnDate)
+            sqlite3_bind_int(stmt, 2, Int32(checkoutHistoryID))
+        })
+
+        return CheckoutAttemptResult(mediaID: mediaID, success: true, message: "Returned")
+    }
+
+    private func lookupMediaRecord(db: OpaquePointer?, mediaID: String) throws -> (tableName: String, mediaType: String, status: String)? {
+        let candidates: [(tableName: String, mediaType: String)] = [
+            ("books", "books"),
+            ("video_games", "video_games"),
+            ("movies", "movies"),
+            ("electronics", "electronics")
+        ]
+
+        for candidate in candidates {
+            var stmt: OpaquePointer?
+            defer { sqlite3_finalize(stmt) }
+            let sql = "SELECT status FROM \(candidate.tableName) WHERE id = ?"
+            try require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
+            bindText(stmt, 1, mediaID)
+
+            if sqlite3_step(stmt) == SQLITE_ROW {
+                let status = columnText(stmt, 0) ?? "owned"
+                return (candidate.tableName, candidate.mediaType, status)
+            }
+        }
+
+        return nil
+    }
+
     private func generateMediaID(prefix: String, digits: Int, table: String, db: OpaquePointer?) throws -> String {
         let sql = "SELECT id FROM \(table) WHERE id LIKE ? ORDER BY id DESC LIMIT 1"
         var stmt: OpaquePointer?
@@ -1111,6 +1344,19 @@ class APIClient: ObservableObject {
         return NSError(domain: "MediaInventory.SQLite", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
     }
 
+    private func refreshFromExternalDatabaseChange() {
+        let now = Date()
+        lastICloudSyncDate = now
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
+
+        fetchBooks()
+        fetchGames()
+        fetchMovies()
+        fetchElectronics()
+        fetchBorrowers()
+        fetchCheckoutHistoryReport()
+    }
+
     private func resolveDatabasePath() throws -> String {
         let fileManager = FileManager.default
 
@@ -1133,17 +1379,38 @@ class APIClient: ObservableObject {
             "\(home)/Documents/Media-inventory-system/media_inventory.db"
         ].compactMap { $0 }
 
-        if let existing = candidates.first(where: { fileManager.fileExists(atPath: $0) }) {
-            UserDefaults.standard.set(existing, forKey: "MediaInventoryDatabasePath")
-            return existing
-        }
-
         let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         let appDir = appSupport.appendingPathComponent("MediaInventory", isDirectory: true)
         try fileManager.createDirectory(at: appDir, withIntermediateDirectories: true)
-        let dbURL = appDir.appendingPathComponent("media_inventory.db")
-        UserDefaults.standard.set(dbURL.path, forKey: "MediaInventoryDatabasePath")
-        return dbURL.path
+        let fallbackLocalPath = candidates.first(where: { fileManager.fileExists(atPath: $0) })
+            ?? appDir.appendingPathComponent("media_inventory.db").path
+
+        let shouldTryICloudSync: Bool = {
+            if UserDefaults.standard.object(forKey: "UseICloudSync") == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: "UseICloudSync")
+        }()
+
+        let resolvedPath: String
+        if shouldTryICloudSync {
+            resolvedPath = try ICloudDatabaseCoordinator.shared.resolveDatabasePath(
+                preferredLocalPath: fallbackLocalPath,
+                dbFileName: "media_inventory.db"
+            )
+
+            if UserDefaults.standard.bool(forKey: "ICloudDatabaseActive") {
+                let now = Date()
+                lastICloudSyncDate = now
+                UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
+            }
+        } else {
+            resolvedPath = fallbackLocalPath
+            UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
+        }
+
+        UserDefaults.standard.set(resolvedPath, forKey: "MediaInventoryDatabasePath")
+        return resolvedPath
     }
 
     private func ensureDatabaseInitialized() throws {
