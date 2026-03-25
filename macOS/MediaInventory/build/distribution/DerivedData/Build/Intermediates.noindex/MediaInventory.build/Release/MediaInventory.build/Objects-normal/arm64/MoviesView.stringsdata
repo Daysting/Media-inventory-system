@@ -1,0 +1,264 @@
+{
+  "source": "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/MoviesView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Add Movie",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 25
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add New Movie",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "Basic Information",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Details",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "Image",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title *",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "Director",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cast",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Year Released",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Studio",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 105
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genre",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 106
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rating",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "Runtime (minutes)",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "Image URL or File Path",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 113
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add Movie",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 123
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Movie",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 181
+        }
+      },
+      {
+        "comment": "",
+        "key": "Basic Information",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "Details",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "Image",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 199
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title *",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "Director",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 187
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cast",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 188
+        }
+      },
+      {
+        "comment": "",
+        "key": "Year Released",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 189
+        }
+      },
+      {
+        "comment": "",
+        "key": "Studio",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 193
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genre",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 194
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 195
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rating",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 196
+        }
+      },
+      {
+        "comment": "",
+        "key": "Image URL or File Path",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 200
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 205
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save Changes",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 210
+        }
+      }
+    ]
+  },
+  "version": 1
+}

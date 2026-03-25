@@ -1,0 +1,536 @@
+{
+  "source": "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/ReportsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Loading report…",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 72
+        }
+      },
+      {
+        "comment": "",
+        "key": "Report:",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 31
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hide Preview",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Show Preview",
+        "location": {
+          "startingColumn": 58,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Print",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refresh",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "No data available.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "No data available.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "No data available. Press Refresh to load.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 259
+        }
+      },
+      {
+        "comment": "",
+        "key": "Borrower ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 316
+        }
+      },
+      {
+        "comment": "",
+        "key": "Name",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 319
+        }
+      },
+      {
+        "comment": "",
+        "key": "Currently Out",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 322
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total Returned",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 327
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last Activity",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 332
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 323
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 328
+        }
+      },
+      {
+        "comment": "",
+        "key": "Item ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 361
+        }
+      },
+      {
+        "comment": "",
+        "key": "Borrower ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 364
+        }
+      },
+      {
+        "comment": "",
+        "key": "Media Title",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 367
+        }
+      },
+      {
+        "comment": "",
+        "key": "Type",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 370
+        }
+      },
+      {
+        "comment": "",
+        "key": "Borrower",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 376
+        }
+      },
+      {
+        "comment": "",
+        "key": "Checked Out",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 379
+        }
+      },
+      {
+        "comment": "",
+        "key": "Returned",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 384
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 390
+        }
+      },
+      {
+        "comment": "",
+        "key": "Out",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 423
+        }
+      },
+      {
+        "comment": "",
+        "key": "Returned",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 423
+        }
+      },
+      {
+        "comment": "",
+        "key": "No genre data available for %@.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 469
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 460
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 497
+        }
+      },
+      {
+        "comment": "",
+        "key": "No overdue items",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 530
+        }
+      },
+      {
+        "comment": "",
+        "key": "All checked-out items are within the 30-day window.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 532
+        }
+      },
+      {
+        "comment": "",
+        "key": "Item ID",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 540
+        }
+      },
+      {
+        "comment": "",
+        "key": "Borrower ID",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 546
+        }
+      },
+      {
+        "comment": "",
+        "key": "Media Title",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 552
+        }
+      },
+      {
+        "comment": "",
+        "key": "Type",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 555
+        }
+      },
+      {
+        "comment": "",
+        "key": "Borrower",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 561
+        }
+      },
+      {
+        "comment": "",
+        "key": "Checked Out",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 564
+        }
+      },
+      {
+        "comment": "",
+        "key": "Days Out",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 569
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 570
+        }
+      },
+      {
+        "comment": "",
+        "key": "ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 608
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 609
+        }
+      },
+      {
+        "comment": "",
+        "key": "Author",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 610
+        }
+      },
+      {
+        "comment": "",
+        "key": "Year",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 611
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genre",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 612
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 613
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 614
+        }
+      },
+      {
+        "comment": "",
+        "key": "ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 628
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 629
+        }
+      },
+      {
+        "comment": "",
+        "key": "Platform",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 630
+        }
+      },
+      {
+        "comment": "",
+        "key": "Year",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 631
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genre",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 632
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 633
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 634
+        }
+      },
+      {
+        "comment": "",
+        "key": "ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 648
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 649
+        }
+      },
+      {
+        "comment": "",
+        "key": "Director",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 650
+        }
+      },
+      {
+        "comment": "",
+        "key": "Year",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 651
+        }
+      },
+      {
+        "comment": "",
+        "key": "Genre",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 652
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 653
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 654
+        }
+      },
+      {
+        "comment": "",
+        "key": "ID",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 668
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 669
+        }
+      },
+      {
+        "comment": "",
+        "key": "Serial Number",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 670
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 671
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 672
+        }
+      }
+    ]
+  },
+  "version": 1
+}

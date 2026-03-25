@@ -1,0 +1,32 @@
+{
+  "source": "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/PrintableReports.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Daysting's Home Inventory System",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 24
+        }
+      },
+      {
+        "comment": "",
+        "key": "Generated: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "No data",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 83
+        }
+      }
+    ]
+  },
+  "version": 1
+}

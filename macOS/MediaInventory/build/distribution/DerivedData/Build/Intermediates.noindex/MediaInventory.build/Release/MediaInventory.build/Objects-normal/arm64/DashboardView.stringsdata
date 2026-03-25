@@ -1,0 +1,48 @@
+{
+  "source": "/Users/erickhofer/Media-inventory-system/macOS/MediaInventory/MediaInventory/DashboardView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Most Popular",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "Based on checkout history",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "Go to %@",
+        "location": {
+          "startingColumn": 15,
+          "startingLine": 113
+        }
+      },
+      {
+        "comment": "",
+        "key": "No items in collection",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld checkout%@",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 162
+        }
+      }
+    ]
+  },
+  "version": 1
+}

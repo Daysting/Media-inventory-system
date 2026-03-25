@@ -94,7 +94,7 @@ final class ICloudDatabaseCoordinator: NSObject {
 
             let query = NSMetadataQuery()
             query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
-            query.predicate = NSPredicate(format: "%K == %@", NSMetadataQueryFSNameKey, fileName)
+            query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, fileName)
 
             NotificationCenter.default.addObserver(
                 self,

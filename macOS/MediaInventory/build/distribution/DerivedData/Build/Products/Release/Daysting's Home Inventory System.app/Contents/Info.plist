@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildMachineOSBuild</key>
+	<string>25D2128</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Daysting's Home Inventory System</string>
+	<key>CFBundleExecutable</key>
+	<string>Daysting's Home Inventory System</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.erickhofer.MediaInventory</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Daysting's Home Inventory System</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.5</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1.5</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>25C58</string>
+	<key>DTPlatformName</key>
+	<string>macosx</string>
+	<key>DTPlatformVersion</key>
+	<string>26.2</string>
+	<key>DTSDKBuild</key>
+	<string>25C58</string>
+	<key>DTSDKName</key>
+	<string>macosx26.2</string>
+	<key>DTXcode</key>
+	<string>2630</string>
+	<key>DTXcodeBuild</key>
+	<string>17C529</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Erick Hofer. All rights reserved.</string>
+	<key>NSSpotlightImportedAttributeDescriptions</key>
+	<array>
+		<dict>
+			<key>CSSearchableItemAttributeDisplayName</key>
+			<string>Media Title</string>
+			<key>CSSearchableItemAttributeName</key>
+			<string>mediaTitle</string>
+			<key>CSSearchableItemAttributeValueMaximumLength</key>
+			<integer>200</integer>
+			<key>CSSearchableItemAttributeValueType</key>
+			<string>XCTextContent</string>
+		</dict>
+		<dict>
+			<key>CSSearchableItemAttributeDisplayName</key>
+			<string>Borrower Name</string>
+			<key>CSSearchableItemAttributeName</key>
+			<string>borrowerName</string>
+			<key>CSSearchableItemAttributeValueType</key>
+			<string>XCTextContent</string>
+		</dict>
+	</array>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
+</dict>
+</plist>
