@@ -244,7 +244,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.5;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
@@ -253,7 +253,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.erickhofer.MediaInventory;
 				PRODUCT_NAME = "Daysting's Home Inventory System";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -270,7 +270,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.5;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
@@ -279,7 +279,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.erickhofer.MediaInventory;
 				PRODUCT_NAME = "Daysting's Home Inventory System";
 				SWIFT_EMIT_LOC_STRINGS = YES;

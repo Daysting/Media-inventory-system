@@ -93,6 +93,35 @@ xcodebuild -scheme MediaInventory -configuration Release -arch arm64
 
 Or simply press `Cmd+R` in Xcode to build and run.
 
+## Create a Distributable DMG
+
+From the `macOS` folder, run:
+
+```bash
+./build_dmg.sh
+```
+
+Optional custom version label:
+
+```bash
+./build_dmg.sh 1.5
+```
+
+Output:
+
+- DMG file is written to `macOS/MediaInventory/build/distribution/MediaInventory-<version>.dmg`
+- Includes the app bundle and an `Applications` shortcut for drag-and-drop install
+
+### Distributing Without a Developer ID
+
+You can still share the DMG before you have a Developer ID.
+
+- Build the DMG normally with `./build_dmg.sh 1.5`
+- The app will be unsigned for public distribution and not notarized
+- On recipient Macs, Gatekeeper may block first launch; users can open via Finder context menu (`Open`) or in System Settings > Privacy & Security > Open Anyway
+
+For internet distribution to non-technical users, add Developer ID signing and notarization later.
+
 ## Features Overview
 
 ### Dashboard
