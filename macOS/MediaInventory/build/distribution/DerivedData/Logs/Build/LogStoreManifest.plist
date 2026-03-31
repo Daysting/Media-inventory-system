@@ -48,7 +48,7 @@
 			<key>uniqueIdentifier</key>
 			<string>2B3E247E-5DE6-4E82-895D-9B0A25000DD1</string>
 		</dict>
-		<key>91110AB6-D9F0-4A2F-BBCC-01EB299576A2</key>
+		<key>5B27FFB2-25CA-4E80-A72F-807756DA14CD</key>
 		<dict>
 			<key>className</key>
 			<string>IDECommandLineBuildLog</string>
@@ -57,7 +57,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>91110AB6-D9F0-4A2F-BBCC-01EB299576A2.xcactivitylog</string>
+			<string>5B27FFB2-25CA-4E80-A72F-807756DA14CD.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -82,13 +82,13 @@
 			<key>signature</key>
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>timeStartedRecording</key>
-			<real>796163546.896685</real>
+			<real>796664941.91513002</real>
 			<key>timeStoppedRecording</key>
-			<real>796163547.14146996</real>
+			<real>796664945.93903303</real>
 			<key>title</key>
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>uniqueIdentifier</key>
-			<string>91110AB6-D9F0-4A2F-BBCC-01EB299576A2</string>
+			<string>5B27FFB2-25CA-4E80-A72F-807756DA14CD</string>
 		</dict>
 	</dict>
 </dict>

@@ -1128,12 +1128,26 @@ class APIClient: ObservableObject {
     private func withDatabase(_ work: (OpaquePointer?) throws -> Void) throws {
         let path = try resolveDatabasePath()
         var db: OpaquePointer?
-        guard sqlite3_open(path, &db) == SQLITE_OK else {
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {
             defer { if db != nil { sqlite3_close(db) } }
             throw databaseError(db)
         }
-        defer { sqlite3_close(db) }
-        try work(db)
+
+        let initialChangeCount = sqlite3_total_changes(db)
+        do {
+            try work(db)
+            let finalChangeCount = sqlite3_total_changes(db)
+            sqlite3_close(db)
+            db = nil
+
+            if finalChangeCount > initialChangeCount {
+                try syncLocalDatabaseToICloudIfEnabled(localPath: path)
+            }
+        } catch {
+            sqlite3_close(db)
+            db = nil
+            throw error
+        }
     }
 
     private func execute(_ db: OpaquePointer?, sql: String, bind: ((OpaquePointer?) -> Void)? = nil) throws {
@@ -1361,8 +1375,10 @@ class APIClient: ObservableObject {
         let fileManager = FileManager.default
 
         let explicitPath = ProcessInfo.processInfo.environment["MEDIA_INVENTORY_DB_PATH"]
-            ?? UserDefaults.standard.string(forKey: "MediaInventoryDatabasePath")
+            ?? UserDefaults.standard.string(forKey: "MediaInventoryDatabasePathOverride")
         if let explicitPath, !explicitPath.isEmpty {
+            let explicitURL = URL(fileURLWithPath: explicitPath)
+            try fileManager.createDirectory(at: explicitURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             return explicitPath
         }
 
@@ -1409,8 +1425,32 @@ class APIClient: ObservableObject {
             UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
         }
 
-        UserDefaults.standard.set(resolvedPath, forKey: "MediaInventoryDatabasePath")
+        let resolvedURL = URL(fileURLWithPath: resolvedPath)
+        try fileManager.createDirectory(at: resolvedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+        UserDefaults.standard.set(resolvedPath, forKey: "MediaInventoryLastResolvedDatabasePath")
         return resolvedPath
+    }
+
+    private func syncLocalDatabaseToICloudIfEnabled(localPath: String) throws {
+        let shouldTryICloudSync: Bool = {
+            if UserDefaults.standard.object(forKey: "UseICloudSync") == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: "UseICloudSync")
+        }()
+
+        guard shouldTryICloudSync else { return }
+
+        try ICloudDatabaseCoordinator.shared.syncLocalChangesToCloud(
+            localPath: localPath,
+            dbFileName: "media_inventory.db"
+        )
+
+        let now = Date()
+        DispatchQueue.main.async {
+            self.lastICloudSyncDate = now
+        }
     }
 
     private func ensureDatabaseInitialized() throws {

@@ -12,6 +12,7 @@ final class ICloudDatabaseCoordinator: NSObject {
 
     private var metadataQuery: NSMetadataQuery?
     private var observedCloudPath: String?
+    private var observedLocalPath: String?
     private var lastKnownModificationDate: Date?
 
     private override init() {
@@ -19,18 +20,34 @@ final class ICloudDatabaseCoordinator: NSObject {
     }
 
     func resolveDatabasePath(preferredLocalPath: String, dbFileName: String) throws -> String {
+        let localURL = URL(fileURLWithPath: preferredLocalPath)
+        try ensureParentDirectoryExists(for: localURL)
+
         guard let cloudURL = try cloudDatabaseURL(dbFileName: dbFileName) else {
             UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
             return preferredLocalPath
         }
 
-        let localURL = URL(fileURLWithPath: preferredLocalPath)
+        try reconcileLocalAndCloud(localURL: localURL, cloudURL: cloudURL)
+
+        startMonitoringCloudDatabase(fileName: dbFileName, localPath: localURL.path, cloudPath: cloudURL.path)
+        UserDefaults.standard.set(true, forKey: "ICloudDatabaseActive")
+        return localURL.path
+    }
+
+    func syncLocalChangesToCloud(localPath: String, dbFileName: String) throws {
+        guard let cloudURL = try cloudDatabaseURL(dbFileName: dbFileName) else {
+            UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
+            return
+        }
+
+        let localURL = URL(fileURLWithPath: localPath)
         try ensureParentDirectoryExists(for: localURL)
         try reconcileLocalAndCloud(localURL: localURL, cloudURL: cloudURL)
 
-        startMonitoringCloudDatabase(fileName: dbFileName, cloudPath: cloudURL.path)
         UserDefaults.standard.set(true, forKey: "ICloudDatabaseActive")
-        return cloudURL.path
+        let now = Date()
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
     }
 
     private func cloudDatabaseURL(dbFileName: String) throws -> URL? {
@@ -87,8 +104,9 @@ final class ICloudDatabaseCoordinator: NSObject {
         try fileManager.copyItem(at: sourceURL, to: destinationURL)
     }
 
-    private func startMonitoringCloudDatabase(fileName: String, cloudPath: String) {
+    private func startMonitoringCloudDatabase(fileName: String, localPath: String, cloudPath: String) {
         DispatchQueue.main.async {
+            self.observedLocalPath = localPath
             self.observedCloudPath = cloudPath
             guard self.metadataQuery == nil else { return }
 
@@ -122,6 +140,7 @@ final class ICloudDatabaseCoordinator: NSObject {
             defer { query.enableUpdates() }
 
             guard let cloudPath = self.observedCloudPath else { return }
+            guard let localPath = self.observedLocalPath else { return }
 
             for index in 0..<query.resultCount {
                 guard let item = query.result(at: index) as? NSMetadataItem,
@@ -133,6 +152,15 @@ final class ICloudDatabaseCoordinator: NSObject {
                 let modDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date()
                 if let lastDate = self.lastKnownModificationDate,
                    modDate <= lastDate {
+                    continue
+                }
+
+                do {
+                    try self.reconcileLocalAndCloud(
+                        localURL: URL(fileURLWithPath: localPath),
+                        cloudURL: url
+                    )
+                } catch {
                     continue
                 }
 
