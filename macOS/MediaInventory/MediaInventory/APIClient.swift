@@ -72,11 +72,15 @@ class APIClient: ObservableObject {
             self?.refreshFromExternalDatabaseChange()
         }
 
-        do {
-            try ensureDatabaseInitialized()
-            migrateExistingRemoteImagesToLocalCache()
-        } catch {
-            errorMessage = "Failed to initialize database: \(error.localizedDescription)"
+        dbQueue.async {
+            do {
+                try self.ensureDatabaseInitialized()
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Failed to initialize database: \(error.localizedDescription)"
+                }
+            }
+            self.migrateExistingRemoteImagesToLocalCache()
         }
     }
 
@@ -1141,7 +1145,7 @@ class APIClient: ObservableObject {
             db = nil
 
             if finalChangeCount > initialChangeCount {
-                try syncLocalDatabaseToICloudIfEnabled(localPath: path)
+                try? syncLocalDatabaseToICloudIfEnabled(localPath: path)
             }
         } catch {
             sqlite3_close(db)
@@ -1410,15 +1414,19 @@ class APIClient: ObservableObject {
 
         let resolvedPath: String
         if shouldTryICloudSync {
-            resolvedPath = try ICloudDatabaseCoordinator.shared.resolveDatabasePath(
-                preferredLocalPath: fallbackLocalPath,
-                dbFileName: "media_inventory.db"
-            )
-
-            if UserDefaults.standard.bool(forKey: "ICloudDatabaseActive") {
-                let now = Date()
-                lastICloudSyncDate = now
-                UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
+            do {
+                resolvedPath = try ICloudDatabaseCoordinator.shared.resolveDatabasePath(
+                    preferredLocalPath: fallbackLocalPath,
+                    dbFileName: "media_inventory.db"
+                )
+                if UserDefaults.standard.bool(forKey: "ICloudDatabaseActive") {
+                    let now = Date()
+                    DispatchQueue.main.async { self.lastICloudSyncDate = now }
+                    UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
+                }
+            } catch {
+                resolvedPath = fallbackLocalPath
+                UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
             }
         } else {
             resolvedPath = fallbackLocalPath

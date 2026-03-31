@@ -6,48 +6,6 @@
 	<integer>12</integer>
 	<key>logs</key>
 	<dict>
-		<key>2B3E247E-5DE6-4E82-895D-9B0A25000DD1</key>
-		<dict>
-			<key>className</key>
-			<string>IDECommandLineBuildLog</string>
-			<key>documentTypeString</key>
-			<string>&lt;nil&gt;</string>
-			<key>domainType</key>
-			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
-			<key>fileName</key>
-			<string>2B3E247E-5DE6-4E82-895D-9B0A25000DD1.xcactivitylog</string>
-			<key>hasPrimaryLog</key>
-			<true/>
-			<key>primaryObservable</key>
-			<dict>
-				<key>highLevelStatus</key>
-				<string>S</string>
-				<key>totalNumberOfAnalyzerIssues</key>
-				<integer>0</integer>
-				<key>totalNumberOfErrors</key>
-				<integer>0</integer>
-				<key>totalNumberOfTestFailures</key>
-				<integer>0</integer>
-				<key>totalNumberOfWarnings</key>
-				<integer>0</integer>
-			</dict>
-			<key>schemeIdentifier-containerName</key>
-			<string>MediaInventory project</string>
-			<key>schemeIdentifier-schemeName</key>
-			<string>MediaInventory</string>
-			<key>schemeIdentifier-sharedScheme</key>
-			<integer>1</integer>
-			<key>signature</key>
-			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
-			<key>timeStartedRecording</key>
-			<real>796163579.26953399</real>
-			<key>timeStoppedRecording</key>
-			<real>796163579.51154101</real>
-			<key>title</key>
-			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
-			<key>uniqueIdentifier</key>
-			<string>2B3E247E-5DE6-4E82-895D-9B0A25000DD1</string>
-		</dict>
 		<key>5B27FFB2-25CA-4E80-A72F-807756DA14CD</key>
 		<dict>
 			<key>className</key>
@@ -89,6 +47,48 @@
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>uniqueIdentifier</key>
 			<string>5B27FFB2-25CA-4E80-A72F-807756DA14CD</string>
+		</dict>
+		<key>A8D6250D-8A42-4C9C-BFE7-A1C3612B69BF</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>A8D6250D-8A42-4C9C-BFE7-A1C3612B69BF.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MediaInventory project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MediaInventory</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
+			<key>timeStartedRecording</key>
+			<real>796673742.65060103</real>
+			<key>timeStoppedRecording</key>
+			<real>796673744.33981299</real>
+			<key>title</key>
+			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
+			<key>uniqueIdentifier</key>
+			<string>A8D6250D-8A42-4C9C-BFE7-A1C3612B69BF</string>
 		</dict>
 	</dict>
 </dict>
