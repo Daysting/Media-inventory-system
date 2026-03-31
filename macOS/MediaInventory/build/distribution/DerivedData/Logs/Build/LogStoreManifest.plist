@@ -6,7 +6,7 @@
 	<integer>12</integer>
 	<key>logs</key>
 	<dict>
-		<key>5B27FFB2-25CA-4E80-A72F-807756DA14CD</key>
+		<key>292691E9-E2DC-414B-8D4D-956BD93D5177</key>
 		<dict>
 			<key>className</key>
 			<string>IDECommandLineBuildLog</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>5B27FFB2-25CA-4E80-A72F-807756DA14CD.xcactivitylog</string>
+			<string>292691E9-E2DC-414B-8D4D-956BD93D5177.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -40,13 +40,13 @@
 			<key>signature</key>
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>timeStartedRecording</key>
-			<real>796664941.91513002</real>
+			<real>796674165.80086803</real>
 			<key>timeStoppedRecording</key>
-			<real>796664945.93903303</real>
+			<real>796674166.20555794</real>
 			<key>title</key>
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>uniqueIdentifier</key>
-			<string>5B27FFB2-25CA-4E80-A72F-807756DA14CD</string>
+			<string>292691E9-E2DC-414B-8D4D-956BD93D5177</string>
 		</dict>
 		<key>A8D6250D-8A42-4C9C-BFE7-A1C3612B69BF</key>
 		<dict>
@@ -89,6 +89,48 @@
 			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
 			<key>uniqueIdentifier</key>
 			<string>A8D6250D-8A42-4C9C-BFE7-A1C3612B69BF</string>
+		</dict>
+		<key>AE868C00-2CE5-4F79-A76A-03F0624DA79D</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>AE868C00-2CE5-4F79-A76A-03F0624DA79D.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MediaInventory project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MediaInventory</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
+			<key>timeStartedRecording</key>
+			<real>796674129.22687101</real>
+			<key>timeStoppedRecording</key>
+			<real>796674130.85255504</real>
+			<key>title</key>
+			<string>Cleaning project MediaInventory with scheme MediaInventory and configuration Release</string>
+			<key>uniqueIdentifier</key>
+			<string>AE868C00-2CE5-4F79-A76A-03F0624DA79D</string>
 		</dict>
 	</dict>
 </dict>

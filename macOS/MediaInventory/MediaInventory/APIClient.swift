@@ -1130,11 +1130,28 @@ class APIClient: ObservableObject {
     }
 
     private func withDatabase(_ work: (OpaquePointer?) throws -> Void) throws {
-        let path = try resolveDatabasePath()
+        var path = try resolveDatabasePath()
         var db: OpaquePointer?
-        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {
-            defer { if db != nil { sqlite3_close(db) } }
-            throw databaseError(db)
+
+        if sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) != SQLITE_OK {
+            let firstError = databaseError(db, path: path)
+            if db != nil { sqlite3_close(db) }
+            db = nil
+
+            let recoveryPath = try localApplicationSupportDatabasePath()
+            if recoveryPath != path {
+                if sqlite3_open_v2(recoveryPath, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK {
+                    path = recoveryPath
+                    UserDefaults.standard.removeObject(forKey: "MediaInventoryDatabasePathOverride")
+                    UserDefaults.standard.set(path, forKey: "MediaInventoryLastResolvedDatabasePath")
+                    UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
+                } else {
+                    defer { if db != nil { sqlite3_close(db) } }
+                    throw firstError
+                }
+            } else {
+                throw firstError
+            }
         }
 
         let initialChangeCount = sqlite3_total_changes(db)
@@ -1351,12 +1368,20 @@ class APIClient: ObservableObject {
         }
     }
 
-    private func databaseError(_ db: OpaquePointer?) -> NSError {
+    private func databaseError(_ db: OpaquePointer?, path: String? = nil) -> NSError {
         let message: String
         if let db, let cMessage = sqlite3_errmsg(db) {
             message = String(cString: cMessage)
         } else {
             message = String(cString: sqlite3_errstr(SQLITE_ERROR))
+        }
+
+        if let path, !path.isEmpty {
+            return NSError(
+                domain: "MediaInventory.SQLite",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "\(message) [path: \(path)]"]
+            )
         }
 
         return NSError(domain: "MediaInventory.SQLite", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
@@ -1399,11 +1424,12 @@ class APIClient: ObservableObject {
             "\(home)/Documents/Media-inventory-system/media_inventory.db"
         ].compactMap { $0 }
 
-        let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let appDir = appSupport.appendingPathComponent("MediaInventory", isDirectory: true)
-        try fileManager.createDirectory(at: appDir, withIntermediateDirectories: true)
-        let fallbackLocalPath = candidates.first(where: { fileManager.fileExists(atPath: $0) })
-            ?? appDir.appendingPathComponent("media_inventory.db").path
+        let fallbackLocalPath: String
+        if let existingCandidate = candidates.first(where: { fileManager.fileExists(atPath: $0) }) {
+            fallbackLocalPath = existingCandidate
+        } else {
+            fallbackLocalPath = try localApplicationSupportDatabasePath()
+        }
 
         let shouldTryICloudSync: Bool = {
             if UserDefaults.standard.object(forKey: "UseICloudSync") == nil {
@@ -1438,6 +1464,14 @@ class APIClient: ObservableObject {
 
         UserDefaults.standard.set(resolvedPath, forKey: "MediaInventoryLastResolvedDatabasePath")
         return resolvedPath
+    }
+
+    private func localApplicationSupportDatabasePath() throws -> String {
+        let fileManager = FileManager.default
+        let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let appDir = appSupport.appendingPathComponent("MediaInventory", isDirectory: true)
+        try fileManager.createDirectory(at: appDir, withIntermediateDirectories: true)
+        return appDir.appendingPathComponent("media_inventory.db").path
     }
 
     private func syncLocalDatabaseToICloudIfEnabled(localPath: String) throws {
