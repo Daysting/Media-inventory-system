@@ -186,24 +186,24 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                ErrorPanel(
-                    message: visibleErrorMessage,
-                    onDismiss: { apiClient.errorMessage = nil }
-                )
-                .frame(height: errorPanelHeight)
+                if visibleErrorMessage != nil {
+                    ErrorPanel(message: visibleErrorMessage, onDismiss: { apiClient.errorMessage = nil })
+                        .frame(height: errorPanelHeight)
+                }
+                #if DEBUG
+                StartupDiagnosticsPanel(lines: startupDiagnostics, isBootstrapping: isBootstrappingConnection, onClear: { startupDiagnostics.removeAll() })
+                    .frame(height: startupPanelHeight)
+                #endif
 
-                StartupDiagnosticsPanel(
-                    lines: startupDiagnostics,
-                    isBootstrapping: isBootstrappingConnection,
-                    onClear: { startupDiagnostics.removeAll() }
-                )
-                .frame(height: startupPanelHeight)
             }
         }
         .onAppear {
             guard !hasBootstrapped else { return }
             hasBootstrapped = true
             bootstrapInitialDataLoad()
+        }
+        .sheet(isPresented: $apiClient.showNewBookSheet) {
+            AddBookForm(isPresented: $apiClient.showNewBookSheet).environmentObject(apiClient)
         }
         .onReceive(NotificationCenter.default.publisher(for: .backendStartupDiagnostic)) { notification in
             guard let line = notification.userInfo?["message"] as? String else { return }

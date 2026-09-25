@@ -47,7 +47,7 @@ class APIClient: ObservableObject {
     @Published var showNewBookSheet = false
     @Published var lastICloudSyncDate: Date?
 
-    private let dbQueue = DispatchQueue(label: "MediaInventory.DatabaseQueue", qos: .userInitiated)
+    private let dbQueue = ICloudDatabaseCoordinator.databaseQueue
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -545,7 +545,7 @@ class APIClient: ObservableObject {
         runAsync {
             var results: [Borrower] = []
             try self.withDatabase { db in
-                let sql = "SELECT id, first_name, last_name, address, phone_number FROM borrowers ORDER BY last_name, first_name"
+                let sql = "SELECT id, first_name, last_name, address, phone_number, email FROM borrowers ORDER BY last_name, first_name"
                 var stmt: OpaquePointer?
                 defer { sqlite3_finalize(stmt) }
                 try self.require(sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, db: db)
@@ -558,7 +558,7 @@ class APIClient: ObservableObject {
                             lastName: self.columnText(stmt, 2) ?? "Borrower",
                             address: self.columnText(stmt, 3),
                             phoneNumber: self.columnText(stmt, 4),
-                            email: nil
+                            email: self.columnText(stmt, 5)
                         )
                     )
                 }
@@ -578,13 +578,14 @@ class APIClient: ObservableObject {
         runAsync {
             try self.withDatabase { db in
                 let id = try self.generateBorrowerID(db: db)
-                let sql = "INSERT INTO borrowers (id, first_name, last_name, address, phone_number) VALUES (?, ?, ?, ?, ?)"
+                let sql = "INSERT INTO borrowers (id, first_name, last_name, address, phone_number, email) VALUES (?, ?, ?, ?, ?, ?)"
                 try self.execute(db, sql: sql, bind: { stmt in
                     self.bindText(stmt, 1, id)
                     self.bindText(stmt, 2, firstName)
                     self.bindText(stmt, 3, lastName)
                     self.bindOptionalText(stmt, 4, address)
                     self.bindOptionalText(stmt, 5, phoneNumber)
+                    self.bindOptionalText(stmt, 6, email)
                 })
             }
             DispatchQueue.main.async { self.fetchBorrowers() }
@@ -596,6 +597,12 @@ class APIClient: ObservableObject {
     func deleteBorrower(id: String) {
         runAsync {
             try self.withDatabase { db in
+                for table in ["books", "video_games", "movies", "electronics"] {
+                    try self.execute(db, sql: "UPDATE \(table) SET status = 'owned' WHERE id IN (SELECT media_id FROM checkout_history WHERE borrower_id = ? AND media_type = ? AND status = 'checked_out')", bind: { stmt in
+                        self.bindText(stmt, 1, id)
+                        self.bindText(stmt, 2, table)
+                    })
+                }
                 try self.execute(db, sql: "DELETE FROM checkout_history WHERE borrower_id = ?", bind: { stmt in
                     self.bindText(stmt, 1, id)
                 })
@@ -1130,45 +1137,28 @@ class APIClient: ObservableObject {
     }
 
     private func withDatabase(_ work: (OpaquePointer?) throws -> Void) throws {
-        var path = try resolveDatabasePath()
+        let path = try resolveDatabasePath()
+        synchronizeIfEnabled(path: path)
         var db: OpaquePointer?
-
-        if sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) != SQLITE_OK {
-            let firstError = databaseError(db, path: path)
-            if db != nil { sqlite3_close(db) }
-            db = nil
-
-            let recoveryPath = try localApplicationSupportDatabasePath()
-            if recoveryPath != path {
-                if sqlite3_open_v2(recoveryPath, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK {
-                    path = recoveryPath
-                    UserDefaults.standard.removeObject(forKey: "MediaInventoryDatabasePathOverride")
-                    UserDefaults.standard.set(path, forKey: "MediaInventoryLastResolvedDatabasePath")
-                    UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
-                } else {
-                    defer { if db != nil { sqlite3_close(db) } }
-                    throw firstError
-                }
-            } else {
-                throw firstError
-            }
-        }
-
+        defer { sqlite3_close(db) }
+        try require(sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK, db: db)
+        sqlite3_busy_timeout(db, 5000)
+        // A closed database is a complete snapshot; never copy an active WAL.
+        try require(sqlite3_exec(db, "PRAGMA journal_mode = DELETE", nil, nil, nil) == SQLITE_OK, db: db)
         let initialChangeCount = sqlite3_total_changes(db)
+        try execute(db, sql: "BEGIN IMMEDIATE")
         do {
+            try initializeSchema(db)
             try work(db)
-            let finalChangeCount = sqlite3_total_changes(db)
-            sqlite3_close(db)
-            db = nil
-
-            if finalChangeCount > initialChangeCount {
-                try? syncLocalDatabaseToICloudIfEnabled(localPath: path)
-            }
+            try execute(db, sql: "COMMIT")
         } catch {
-            sqlite3_close(db)
-            db = nil
+            try? execute(db, sql: "ROLLBACK")
             throw error
         }
+        let changed = sqlite3_total_changes(db) > initialChangeCount
+        sqlite3_close(db)
+        db = nil
+        if changed { synchronizeIfEnabled(path: path) }
     }
 
     private func execute(_ db: OpaquePointer?, sql: String, bind: ((OpaquePointer?) -> Void)? = nil) throws {
@@ -1388,10 +1378,6 @@ class APIClient: ObservableObject {
     }
 
     private func refreshFromExternalDatabaseChange() {
-        let now = Date()
-        lastICloudSyncDate = now
-        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
-
         fetchBooks()
         fetchGames()
         fetchMovies()
@@ -1401,102 +1387,93 @@ class APIClient: ObservableObject {
     }
 
     private func resolveDatabasePath() throws -> String {
-        let fileManager = FileManager.default
-
-        let explicitPath = ProcessInfo.processInfo.environment["MEDIA_INVENTORY_DB_PATH"]
-            ?? UserDefaults.standard.string(forKey: "MediaInventoryDatabasePathOverride")
-        if let explicitPath, !explicitPath.isEmpty {
-            let explicitURL = URL(fileURLWithPath: explicitPath)
-            try fileManager.createDirectory(at: explicitURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            return explicitPath
+        #if DEBUG
+        // Explicit test/development paths never affect an App Store build.
+        if let path = ProcessInfo.processInfo.environment["MEDIA_INVENTORY_DB_PATH"], !path.isEmpty {
+            try FileManager.default.createDirectory(at: URL(fileURLWithPath: path).deletingLastPathComponent(), withIntermediateDirectories: true)
+            return path
         }
+        #endif
+        let path = try Self.applicationSupportDirectory().appendingPathComponent("media_inventory.db").path
+        UserDefaults.standard.set(path, forKey: "MediaInventoryLastResolvedDatabasePath")
+        return path
+    }
 
-        let projectRoot = ProcessInfo.processInfo.environment["MEDIA_INVENTORY_PROJECT_ROOT"]
-            ?? UserDefaults.standard.string(forKey: "MediaInventoryProjectPath")
+    static func applicationSupportDirectory() throws -> URL {
+        let fm = FileManager.default
+        let base = try fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let folder = base.appendingPathComponent("MediaInventory", isDirectory: true)
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
 
-        let cwd = fileManager.currentDirectoryPath
-        let home = NSHomeDirectory()
-
-        let candidates = [
-            projectRoot.map { "\($0)/media_inventory.db" },
-            "\(cwd)/media_inventory.db",
-            "\(home)/Media-inventory-system/media_inventory.db",
-            "\(home)/Documents/Media-inventory-system/media_inventory.db"
-        ].compactMap { $0 }
-
-        let fallbackLocalPath: String
-        if let existingCandidate = candidates.first(where: { fileManager.fileExists(atPath: $0) }) {
-            fallbackLocalPath = existingCandidate
-        } else {
-            fallbackLocalPath = try localApplicationSupportDatabasePath()
-        }
-
-        let shouldTryICloudSync: Bool = {
-            if UserDefaults.standard.object(forKey: "UseICloudSync") == nil {
-                return true
-            }
-            return UserDefaults.standard.bool(forKey: "UseICloudSync")
-        }()
-
-        let resolvedPath: String
-        if shouldTryICloudSync {
-            do {
-                resolvedPath = try ICloudDatabaseCoordinator.shared.resolveDatabasePath(
-                    preferredLocalPath: fallbackLocalPath,
-                    dbFileName: "media_inventory.db"
-                )
-                if UserDefaults.standard.bool(forKey: "ICloudDatabaseActive") {
-                    let now = Date()
-                    DispatchQueue.main.async { self.lastICloudSyncDate = now }
-                    UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
-                }
-            } catch {
-                resolvedPath = fallbackLocalPath
-                UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
-            }
-        } else {
-            resolvedPath = fallbackLocalPath
+    private func synchronizeIfEnabled(path: String, resolution: DatabaseSnapshotSync.Resolution? = nil) {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["MEDIA_INVENTORY_DB_PATH"] != nil { return }
+        #endif
+        guard UserDefaults.standard.object(forKey: "UseICloudSync") == nil || UserDefaults.standard.bool(forKey: "UseICloudSync") else {
             UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
+            UserDefaults.standard.set("Disabled — saved on this Mac", forKey: "ICloudSyncStatus")
+            UserDefaults.standard.removeObject(forKey: "ICloudSyncError")
+            return
         }
-
-        let resolvedURL = URL(fileURLWithPath: resolvedPath)
-        try fileManager.createDirectory(at: resolvedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-
-        UserDefaults.standard.set(resolvedPath, forKey: "MediaInventoryLastResolvedDatabasePath")
-        return resolvedPath
-    }
-
-    private func localApplicationSupportDatabasePath() throws -> String {
-        let fileManager = FileManager.default
-        let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let appDir = appSupport.appendingPathComponent("MediaInventory", isDirectory: true)
-        try fileManager.createDirectory(at: appDir, withIntermediateDirectories: true)
-        return appDir.appendingPathComponent("media_inventory.db").path
-    }
-
-    private func syncLocalDatabaseToICloudIfEnabled(localPath: String) throws {
-        let shouldTryICloudSync: Bool = {
-            if UserDefaults.standard.object(forKey: "UseICloudSync") == nil {
-                return true
+        do {
+            _ = try ICloudDatabaseCoordinator.shared.synchronize(localURL: URL(fileURLWithPath: path), resolution: resolution)
+            DispatchQueue.main.async { self.lastICloudSyncDate = Date() }
+        } catch {
+            UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
+            UserDefaults.standard.set(error.localizedDescription, forKey: "ICloudSyncStatus")
+            // Keep local edits available during download/offline periods, but show
+            // conflicts and failures instead of silently pretending sync succeeded.
+            if !(error is ICloudDatabaseCoordinator.CloudError) {
+                UserDefaults.standard.set(error.localizedDescription, forKey: "ICloudSyncError")
             }
-            return UserDefaults.standard.bool(forKey: "UseICloudSync")
-        }()
-
-        guard shouldTryICloudSync else { return }
-
-        try ICloudDatabaseCoordinator.shared.syncLocalChangesToCloud(
-            localPath: localPath,
-            dbFileName: "media_inventory.db"
-        )
-
-        let now = Date()
-        DispatchQueue.main.async {
-            self.lastICloudSyncDate = now
         }
+    }
+
+    func syncNow(resolution: DatabaseSnapshotSync.Resolution? = nil) {
+        runAsync {
+            self.synchronizeIfEnabled(path: try self.resolveDatabasePath(), resolution: resolution)
+            DispatchQueue.main.async { self.refreshFromExternalDatabaseChange() }
+        } onError: { self.errorMessage = $0.localizedDescription }
+    }
+
+    func exportInventory(to destination: URL) {
+        let scoped = destination.startAccessingSecurityScopedResource()
+        runAsync {
+            defer { if scoped { destination.stopAccessingSecurityScopedResource() } }
+            let source = URL(fileURLWithPath: try self.resolveDatabasePath())
+            try Data(contentsOf: source).write(to: destination, options: .atomic)
+        } onError: { self.errorMessage = $0.localizedDescription }
+    }
+
+    func importInventory(from source: URL) {
+        let scoped = source.startAccessingSecurityScopedResource()
+        runAsync {
+            defer { if scoped { source.stopAccessingSecurityScopedResource() } }
+            let destination = URL(fileURLWithPath: try self.resolveDatabasePath())
+            let folder = destination.deletingLastPathComponent()
+            let engine = DatabaseSnapshotSync(localURL: destination, cloudURL: source,
+                stateURL: folder.appendingPathComponent("icloud-sync-state.json"),
+                backupsURL: folder.appendingPathComponent("Sync Backups"), account: "import")
+            let data = try Data(contentsOf: source)
+            try engine.validate(data)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try engine.preserve(Data(contentsOf: destination))
+            }
+            try data.write(to: destination, options: .atomic)
+            // Imported data is a local edit; normal conflict checks still apply.
+            try self.ensureDatabaseInitialized()
+            self.migrateExistingRemoteImagesToLocalCache()
+            DispatchQueue.main.async { self.refreshFromExternalDatabaseChange() }
+        } onError: { self.errorMessage = $0.localizedDescription }
     }
 
     private func ensureDatabaseInitialized() throws {
-        try withDatabase { db in
+        try withDatabase { _ in }
+    }
+
+    private func initializeSchema(_ db: OpaquePointer?) throws {
             try execute(db, sql: """
                 CREATE TABLE IF NOT EXISTS books (
                     id TEXT PRIMARY KEY,
@@ -1571,6 +1548,8 @@ class APIClient: ObservableObject {
                 )
             """)
 
+            try ensureColumnExists(db, table: "borrowers", column: "email", definition: "TEXT")
+
             try execute(db, sql: """
                 CREATE TABLE IF NOT EXISTS checkout_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1582,7 +1561,6 @@ class APIClient: ObservableObject {
                     status TEXT DEFAULT 'checked_out'
                 )
             """)
-        }
     }
 
     private func ensureColumnExists(_ db: OpaquePointer?, table: String, column: String, definition: String) throws {
@@ -1611,7 +1589,7 @@ class APIClient: ObservableObject {
     }
 
     private func migrateRemoteImages(in table: String, db: OpaquePointer?) throws {
-        let selectSQL = "SELECT id, image_url FROM \(table) WHERE image_url LIKE 'http://%' OR image_url LIKE 'https://%'"
+        let selectSQL = "SELECT id, image_url FROM \(table) WHERE image_url IS NOT NULL AND image_url NOT LIKE 'data:%'"
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
         try require(sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nil) == SQLITE_OK, db: db)
@@ -1628,95 +1606,11 @@ class APIClient: ObservableObject {
     }
 
     private func cacheImageIfNeeded(_ rawImageValue: String?, mediaType: String, mediaID: String) -> String? {
-        guard let rawImageValue else { return nil }
-        let value = rawImageValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return nil }
-
-        if let url = URL(string: value), let scheme = url.scheme?.lowercased() {
-            switch scheme {
-            case "http", "https":
-                do {
-                    let localURL = try downloadImageToCache(sourceURL: url, mediaType: mediaType, mediaID: mediaID)
-                    return localURL.absoluteString
-                } catch {
-                    DispatchQueue.main.async {
-                        self.errorMessage = "Unable to cache image for offline use: \(error.localizedDescription)"
-                    }
-                    return nil
-                }
-            case "file":
-                do {
-                    let localURL = try copyImageToCache(sourceURL: url, mediaType: mediaType, mediaID: mediaID)
-                    return localURL.absoluteString
-                } catch {
-                    return value
-                }
-            default:
-                return value
-            }
-        }
-
-        let expandedPath = (value as NSString).expandingTildeInPath
-        guard FileManager.default.fileExists(atPath: expandedPath) else { return nil }
-
-        do {
-            let localURL = try copyImageToCache(sourceURL: URL(fileURLWithPath: expandedPath), mediaType: mediaType, mediaID: mediaID)
-            return localURL.absoluteString
-        } catch {
+        guard let value = rawImageValue?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        do { return try InventoryImage.storageValue(value) }
+        catch {
+            DispatchQueue.main.async { self.errorMessage = "Unable to save cover image: \(error.localizedDescription)" }
             return value
         }
-    }
-
-    private func downloadImageToCache(sourceURL: URL, mediaType: String, mediaID: String) throws -> URL {
-        let data = try Data(contentsOf: sourceURL)
-        let ext = preferredImageExtension(sourceURL: sourceURL, data: data)
-        let destinationURL = try cachedImageURL(mediaType: mediaType, mediaID: mediaID, fileExtension: ext)
-        try data.write(to: destinationURL, options: .atomic)
-        return destinationURL
-    }
-
-    private func copyImageToCache(sourceURL: URL, mediaType: String, mediaID: String) throws -> URL {
-        let fileManager = FileManager.default
-        let ext = preferredImageExtension(sourceURL: sourceURL, data: nil)
-        let destinationURL = try cachedImageURL(mediaType: mediaType, mediaID: mediaID, fileExtension: ext)
-
-        if fileManager.fileExists(atPath: destinationURL.path) {
-            try fileManager.removeItem(at: destinationURL)
-        }
-
-        try fileManager.copyItem(at: sourceURL, to: destinationURL)
-        return destinationURL
-    }
-
-    private func cachedImageURL(mediaType: String, mediaID: String, fileExtension: String) throws -> URL {
-        let fileManager = FileManager.default
-        let appSupport = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let imageDir = appSupport
-            .appendingPathComponent("MediaInventory", isDirectory: true)
-            .appendingPathComponent("images", isDirectory: true)
-            .appendingPathComponent(mediaType, isDirectory: true)
-        try fileManager.createDirectory(at: imageDir, withIntermediateDirectories: true)
-
-        let safeExt = fileExtension.isEmpty ? "jpg" : fileExtension
-        return imageDir.appendingPathComponent("\(mediaID).\(safeExt)", isDirectory: false)
-    }
-
-    private func preferredImageExtension(sourceURL: URL, data: Data?) -> String {
-        let pathExt = sourceURL.pathExtension.lowercased()
-        if ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tif", "tiff", "bmp"].contains(pathExt) {
-            return pathExt
-        }
-
-        guard let data else { return "jpg" }
-
-        if data.starts(with: [0x89, 0x50, 0x4E, 0x47]) { return "png" }
-        if data.starts(with: [0xFF, 0xD8, 0xFF]) { return "jpg" }
-        if data.starts(with: [0x47, 0x49, 0x46, 0x38]) { return "gif" }
-        if data.starts(with: [0x52, 0x49, 0x46, 0x46]) && data.count > 12 {
-            let webpSignature = Data([0x57, 0x45, 0x42, 0x50])
-            if data.subdata(in: 8..<12) == webpSignature { return "webp" }
-        }
-
-        return "jpg"
     }
 }

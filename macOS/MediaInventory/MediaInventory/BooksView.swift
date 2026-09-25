@@ -116,7 +116,7 @@ struct AddBookForm: View {
                 }
                 
                 Section("Image") {
-                    TextField("Image URL or File Path", text: $imageUrl)
+                    InventoryImageField(value: $imageUrl)
                 }
             }
             
@@ -208,16 +208,7 @@ struct MediaCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                AsyncImage(url: imageUrl.flatMap { URL(string: $0) }) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    ZStack {
-                        Color.gray.opacity(0.12)
-                        Image(systemName: "photo")
-                            .font(.system(size: 32))
-                            .foregroundColor(.secondary)
-                    }
-                }
+                InventoryCover(value: imageUrl)
                 .frame(height: 180)
                 .clipped()
 
@@ -343,7 +334,7 @@ struct EditBookForm: View {
                 }
 
                 Section("Image") {
-                    TextField("Image URL or File Path", text: $imageUrl)
+                    InventoryImageField(value: $imageUrl)
                 }
             }
 

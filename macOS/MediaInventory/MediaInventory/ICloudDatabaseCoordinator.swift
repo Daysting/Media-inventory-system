@@ -4,172 +4,144 @@ extension Notification.Name {
     static let iCloudDatabaseDidChange = Notification.Name("ICloudDatabaseDidChange")
 }
 
-final class ICloudDatabaseCoordinator: NSObject {
+/// All database reads, writes, imports and exports share this queue, including
+/// clients created by Spotlight. Metadata/file-presenter callbacks never copy files.
+final class ICloudDatabaseCoordinator {
     static let shared = ICloudDatabaseCoordinator()
+    static let databaseQueue = DispatchQueue(label: "MediaInventory.Database", qos: .userInitiated)
 
-    private let fileManager = FileManager.default
-    private let queue = DispatchQueue(label: "MediaInventory.ICloudDatabaseCoordinator", qos: .utility)
+    private var readyCloudPath: String?
+    private var coordinatedPresenter: InventoryCloudPresenter?
+    // The following monitoring properties are used exclusively on the main queue.
+    private var query: NSMetadataQuery?
+    private var observers: [NSObjectProtocol] = []
+    private var presenter: InventoryCloudPresenter?
+    private var monitoredURL: URL?
 
-    private var metadataQuery: NSMetadataQuery?
-    private var observedCloudPath: String?
-    private var observedLocalPath: String?
-    private var lastKnownModificationDate: Date?
-
-    private override init() {
-        super.init()
-    }
-
-    func resolveDatabasePath(preferredLocalPath: String, dbFileName: String) throws -> String {
-        let localURL = URL(fileURLWithPath: preferredLocalPath)
-        try ensureParentDirectoryExists(for: localURL)
-
-        guard let cloudURL = try cloudDatabaseURL(dbFileName: dbFileName) else {
-            UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
-            return preferredLocalPath
-        }
-
-        try reconcileLocalAndCloud(localURL: localURL, cloudURL: cloudURL)
-
-        startMonitoringCloudDatabase(fileName: dbFileName, localPath: localURL.path, cloudPath: cloudURL.path)
-        UserDefaults.standard.set(true, forKey: "ICloudDatabaseActive")
-        return localURL.path
-    }
-
-    func syncLocalChangesToCloud(localPath: String, dbFileName: String) throws {
-        guard let cloudURL = try cloudDatabaseURL(dbFileName: dbFileName) else {
-            UserDefaults.standard.set(false, forKey: "ICloudDatabaseActive")
-            return
-        }
-
-        let localURL = URL(fileURLWithPath: localPath)
-        try ensureParentDirectoryExists(for: localURL)
-        try reconcileLocalAndCloud(localURL: localURL, cloudURL: cloudURL)
-
-        UserDefaults.standard.set(true, forKey: "ICloudDatabaseActive")
-        let now = Date()
-        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
-    }
-
-    private func cloudDatabaseURL(dbFileName: String) throws -> URL? {
-        guard let containerURL = fileManager.url(forUbiquityContainerIdentifier: nil) else {
-            return nil
-        }
-
-        let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
-        try fileManager.createDirectory(at: documentsURL, withIntermediateDirectories: true)
-
-        return documentsURL.appendingPathComponent(dbFileName, isDirectory: false)
-    }
-
-    private func ensureParentDirectoryExists(for fileURL: URL) throws {
-        let parent = fileURL.deletingLastPathComponent()
-        try fileManager.createDirectory(at: parent, withIntermediateDirectories: true)
-    }
-
-    private func reconcileLocalAndCloud(localURL: URL, cloudURL: URL) throws {
-        let localExists = fileManager.fileExists(atPath: localURL.path)
-        let cloudExists = fileManager.fileExists(atPath: cloudURL.path)
-
-        if localExists && !cloudExists {
-            try fileManager.copyItem(at: localURL, to: cloudURL)
-            return
-        }
-
-        if cloudExists && !localExists {
-            try fileManager.copyItem(at: cloudURL, to: localURL)
-            return
-        }
-
-        guard localExists, cloudExists else {
-            return
-        }
-
-        let localDate = (try? localURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-        let cloudDate = (try? cloudURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-
-        if localDate > cloudDate {
-            try replaceItem(at: cloudURL, with: localURL)
-            return
-        }
-
-        if cloudDate > localDate {
-            try replaceItem(at: localURL, with: cloudURL)
-        }
-    }
-
-    private func replaceItem(at destinationURL: URL, with sourceURL: URL) throws {
-        if fileManager.fileExists(atPath: destinationURL.path) {
-            try fileManager.removeItem(at: destinationURL)
-        }
-        try fileManager.copyItem(at: sourceURL, to: destinationURL)
-    }
-
-    private func startMonitoringCloudDatabase(fileName: String, localPath: String, cloudPath: String) {
-        DispatchQueue.main.async {
-            self.observedLocalPath = localPath
-            self.observedCloudPath = cloudPath
-            guard self.metadataQuery == nil else { return }
-
-            let query = NSMetadataQuery()
-            query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
-            query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, fileName)
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(self.handleMetadataQueryUpdate),
-                name: .NSMetadataQueryDidFinishGathering,
-                object: query
-            )
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(self.handleMetadataQueryUpdate),
-                name: .NSMetadataQueryDidUpdate,
-                object: query
-            )
-
-            self.metadataQuery = query
-            query.start()
-        }
-    }
-
-    @objc
-    private func handleMetadataQueryUpdate(_ notification: Notification) {
-        queue.async {
-            guard let query = notification.object as? NSMetadataQuery else { return }
-            query.disableUpdates()
-            defer { query.enableUpdates() }
-
-            guard let cloudPath = self.observedCloudPath else { return }
-            guard let localPath = self.observedLocalPath else { return }
-
-            for index in 0..<query.resultCount {
-                guard let item = query.result(at: index) as? NSMetadataItem,
-                      let url = item.value(forAttribute: NSMetadataItemURLKey) as? URL,
-                      url.path == cloudPath else {
-                    continue
-                }
-
-                let modDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date()
-                if let lastDate = self.lastKnownModificationDate,
-                   modDate <= lastDate {
-                    continue
-                }
-
-                do {
-                    try self.reconcileLocalAndCloud(
-                        localURL: URL(fileURLWithPath: localPath),
-                        cloudURL: url
-                    )
-                } catch {
-                    continue
-                }
-
-                self.lastKnownModificationDate = modDate
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(name: .iCloudDatabaseDidChange, object: nil)
-                }
-                return
+    enum CloudError: LocalizedError {
+        case unavailable, downloading
+        var errorDescription: String? {
+            switch self {
+            case .unavailable: return "iCloud is unavailable. Changes are saved on this Mac."
+            case .downloading: return "Waiting for iCloud to finish downloading the inventory. Changes are saved on this Mac."
             }
         }
     }
+
+    func synchronize(localURL: URL, resolution: DatabaseSnapshotSync.Resolution? = nil) throws -> Bool {
+        dispatchPrecondition(condition: .onQueue(Self.databaseQueue))
+        let fm = FileManager.default
+        guard let token = fm.ubiquityIdentityToken,
+              let container = fm.url(forUbiquityContainerIdentifier: "iCloud.com.erickhofer.MediaInventory") else {
+            throw CloudError.unavailable
+        }
+        let documents = container.appendingPathComponent("Documents", isDirectory: true)
+        try fm.createDirectory(at: documents, withIntermediateDirectories: true)
+        let cloudURL = documents.appendingPathComponent("media_inventory.db")
+        startMonitoring(cloudURL)
+        guard readyCloudPath == cloudURL.path else { throw CloudError.downloading }
+
+        let values: URLResourceValues
+        do {
+            values = try cloudURL.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey])
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            let placeholder = documents.appendingPathComponent(".media_inventory.db.icloud")
+            if fm.fileExists(atPath: placeholder.path) {
+                try fm.startDownloadingUbiquitousItem(at: cloudURL)
+                throw CloudError.downloading
+            }
+            values = URLResourceValues()
+        }
+        if values.isUbiquitousItem == true && values.ubiquitousItemDownloadingStatus != .current {
+            try fm.startDownloadingUbiquitousItem(at: cloudURL)
+            throw CloudError.downloading
+        }
+        let tokenData = try NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: false)
+        let folder = localURL.deletingLastPathComponent()
+        let engine = DatabaseSnapshotSync(
+            localURL: localURL, cloudURL: cloudURL,
+            stateURL: folder.appendingPathComponent("icloud-sync-state.json"),
+            backupsURL: folder.appendingPathComponent("Sync Backups", isDirectory: true),
+            account: DatabaseSnapshotSync.digest(tokenData)
+        )
+        var coordinationError: NSError?
+        var outcome: Result<Bool, Error>?
+        NSFileCoordinator(filePresenter: coordinatedPresenter).coordinate(writingItemAt: cloudURL, options: .forMerging, error: &coordinationError) { url in
+            outcome = Result {
+                let conflicts = NSFileVersion.unresolvedConflictVersionsOfItem(at: url) ?? []
+                if !conflicts.isEmpty {
+                    if fm.fileExists(atPath: localURL.path) { try engine.preserve(Data(contentsOf: localURL)) }
+                    if fm.fileExists(atPath: url.path) { try engine.preserve(Data(contentsOf: url)) }
+                    for version in conflicts { try engine.preserve(Data(contentsOf: version.url)) }
+                    guard resolution != nil else { throw DatabaseSnapshotSync.SyncError.conflict }
+                }
+                let changed = try engine.synchronize(resolution: resolution)
+                // Only acknowledge system conflicts after preserving every version
+                // and successfully applying the user's explicit resolution.
+                for version in conflicts { version.isResolved = true }
+                return changed
+            }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let outcome else { throw CloudError.unavailable }
+        let changed = try outcome.get()
+        UserDefaults.standard.set(true, forKey: "ICloudDatabaseActive")
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "ICloudLastSyncTimeInterval")
+        let uploaded = (try? cloudURL.resourceValues(forKeys: [.ubiquitousItemIsUploadedKey]))?.ubiquitousItemIsUploaded == true
+        UserDefaults.standard.set(uploaded ? "Up to date" : "Saved locally; waiting for iCloud upload", forKey: "ICloudSyncStatus")
+        UserDefaults.standard.removeObject(forKey: "ICloudSyncError")
+        return changed
+    }
+
+    private func startMonitoring(_ url: URL) {
+        DispatchQueue.main.async {
+            guard self.monitoredURL != url else { return }
+            self.query?.stop()
+            for observer in self.observers { NotificationCenter.default.removeObserver(observer) }
+            self.observers.removeAll()
+            if let presenter = self.presenter { NSFileCoordinator.removeFilePresenter(presenter) }
+            self.monitoredURL = url
+            let presenter = InventoryCloudPresenter(url: url)
+            self.presenter = presenter
+            NSFileCoordinator.addFilePresenter(presenter)
+
+            let query = NSMetadataQuery()
+            query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
+            query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, url.lastPathComponent)
+            for name in [Notification.Name.NSMetadataQueryDidFinishGathering, .NSMetadataQueryDidUpdate] {
+                self.observers.append(NotificationCenter.default.addObserver(forName: name, object: query, queue: .main) { _ in
+                    Self.databaseQueue.async {
+                        self.coordinatedPresenter = presenter
+                        self.readyCloudPath = url.path
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: .iCloudDatabaseDidChange, object: nil)
+                        }
+                    }
+                })
+            }
+            self.observers.append(NotificationCenter.default.addObserver(forName: .NSUbiquityIdentityDidChange, object: nil, queue: .main) { _ in
+                self.monitoredURL = nil
+                Self.databaseQueue.async { self.readyCloudPath = nil }
+                NotificationCenter.default.post(name: .iCloudDatabaseDidChange, object: nil)
+            })
+            self.query = query
+            query.start()
+        }
+    }
+}
+
+private final class InventoryCloudPresenter: NSObject, NSFilePresenter {
+    let presentedItemURL: URL?
+    let presentedItemOperationQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+        return queue
+    }()
+    init(url: URL) { presentedItemURL = url }
+    func presentedItemDidChange() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .iCloudDatabaseDidChange, object: nil)
+        }
+    }
+    func presentedItemDidGain(_ version: NSFileVersion) { presentedItemDidChange() }
 }

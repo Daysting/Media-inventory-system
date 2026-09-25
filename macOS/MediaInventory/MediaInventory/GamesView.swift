@@ -103,7 +103,7 @@ struct AddGameForm: View {
                 }
                 
                 Section("Image") {
-                    TextField("Image URL or File Path", text: $imageUrl)
+                    InventoryImageField(value: $imageUrl)
                 }
             }
             
@@ -181,7 +181,7 @@ struct EditGameForm: View {
                 }
 
                 Section("Image") {
-                    TextField("Image URL or File Path", text: $imageUrl)
+                    InventoryImageField(value: $imageUrl)
                 }
             }
 
