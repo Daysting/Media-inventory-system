@@ -38,7 +38,7 @@ class SearchIndexer {
                 attributes.keywords = [book.genre ?? "", book.fictionNonfiction ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = book.imageUrl, let url = URL(string: imageUrl) {
-                    if let imageData = try? Data(contentsOf: url) {
+                    if let imageData = InventoryImage.data(from: imageUrl) ?? (try? Data(contentsOf: url)) {
                         attributes.thumbnailData = imageData
                     }
                 }
@@ -70,7 +70,7 @@ class SearchIndexer {
                 attributes.keywords = [game.genre ?? "", game.platform ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = game.imageUrl, let url = URL(string: imageUrl) {
-                    if let imageData = try? Data(contentsOf: url) {
+                    if let imageData = InventoryImage.data(from: imageUrl) ?? (try? Data(contentsOf: url)) {
                         attributes.thumbnailData = imageData
                     }
                 }
@@ -102,7 +102,7 @@ class SearchIndexer {
                 attributes.keywords = [movie.genre ?? "", movie.rating ?? ""].filter { !$0.isEmpty }
                 
                 if let imageUrl = movie.imageUrl, let url = URL(string: imageUrl) {
-                    if let imageData = try? Data(contentsOf: url) {
+                    if let imageData = InventoryImage.data(from: imageUrl) ?? (try? Data(contentsOf: url)) {
                         attributes.thumbnailData = imageData
                     }
                 }

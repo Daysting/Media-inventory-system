@@ -26,6 +26,9 @@
 		A10000010000000000000011 /* ElectronicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000114 /* ElectronicsView.swift */; };
 		A10000010000000000000012 /* PrintableReports.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000115 /* PrintableReports.swift */; };
 		A10000010000000000000013 /* ICloudDatabaseCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */; };
+		A10000010000000000000014 /* DatabaseSnapshotSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000117 /* DatabaseSnapshotSync.swift */; };
+		A10000010000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000118 /* PrivacyInfo.xcprivacy */; };
+		A10000010000000000000016 /* InventoryImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000119 /* InventoryImage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,15 +45,18 @@
 		A1000001000000000000010B /* MoviesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoviesView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010C /* BorrowersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowersView.swift; sourceTree = "<group>"; };
 		A1000001000000000000010D /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
+		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1000001000000000000010F /* ../MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
+		A10000010000000000000110 /* Daysting's Home Inventory System.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Daysting's Home Inventory System.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000010000000000000111 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		A10000010000000000000112 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsView.swift; sourceTree = "<group>"; };
 		A10000010000000000000113 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000010000000000000114 /* ElectronicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicsView.swift; sourceTree = "<group>"; };
 		A10000010000000000000115 /* PrintableReports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintableReports.swift; sourceTree = "<group>"; };
 		A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDatabaseCoordinator.swift; sourceTree = "<group>"; };
-		A1000001000000000000010E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1000001000000000000010F /* MediaInventory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ../MediaInventory.entitlements; sourceTree = "<group>"; };
-		A10000010000000000000110 /* MediaInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000010000000000000117 /* DatabaseSnapshotSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseSnapshotSync.swift; sourceTree = "<group>"; };
+		A10000010000000000000118 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A10000010000000000000119 /* InventoryImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryImage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,6 +84,9 @@
 				A10000010000000000000113 /* Assets.xcassets */,
 				A10000010000000000000101 /* MediaInventoryApp.swift */,
 				A10000010000000000000116 /* ICloudDatabaseCoordinator.swift */,
+				A10000010000000000000117 /* DatabaseSnapshotSync.swift */,
+				A10000010000000000000118 /* PrivacyInfo.xcprivacy */,
+				A10000010000000000000119 /* InventoryImage.swift */,
 				A10000010000000000000114 /* ElectronicsView.swift */,
 				A10000010000000000000115 /* PrintableReports.swift */,
 				A10000010000000000000102 /* AppDelegate.swift */,
@@ -95,7 +104,7 @@
 				A10000010000000000000111 /* ReportsView.swift */,
 				A10000010000000000000112 /* DiagnosticsView.swift */,
 				A1000001000000000000010E /* Info.plist */,
-				A1000001000000000000010F /* MediaInventory.entitlements */,
+				A1000001000000000000010F /* ../MediaInventory.entitlements */,
 			);
 			path = MediaInventory;
 			sourceTree = "<group>";
@@ -103,7 +112,7 @@
 		A10000010000000000000303 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A10000010000000000000110 /* MediaInventory.app */,
+				A10000010000000000000110 /* Daysting's Home Inventory System.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -125,7 +134,7 @@
 			);
 			name = MediaInventory;
 			productName = MediaInventory;
-			productReference = A10000010000000000000110 /* MediaInventory.app */;
+			productReference = A10000010000000000000110 /* Daysting's Home Inventory System.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -167,6 +176,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000010000000000000010 /* Assets.xcassets in Resources */,
+				A10000010000000000000015 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,6 +205,8 @@
 				A10000010000000000000011 /* ElectronicsView.swift in Sources */,
 				A10000010000000000000012 /* PrintableReports.swift in Sources */,
 				A10000010000000000000013 /* ICloudDatabaseCoordinator.swift in Sources */,
+				A10000010000000000000014 /* DatabaseSnapshotSync.swift in Sources */,
+				A10000010000000000000016 /* InventoryImage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,13 +251,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
 				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGNING_ALLOWED = YES;
-				CODE_SIGNING_REQUIRED = YES;
-				CURRENT_PROJECT_VERSION = 1.6;
-				DEVELOPMENT_TEAM = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 160;
+				DEVELOPMENT_TEAM = AZ94QYXR6U;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -265,13 +280,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
 				CODE_SIGN_ENTITLEMENTS = MediaInventory.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGNING_ALLOWED = YES;
-				CODE_SIGNING_REQUIRED = YES;
-				CURRENT_PROJECT_VERSION = 1.6;
-				DEVELOPMENT_TEAM = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 160;
+				DEVELOPMENT_TEAM = AZ94QYXR6U;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MediaInventory/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

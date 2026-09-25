@@ -13,12 +13,6 @@ struct MediaInventoryApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .commands {
-            CommandGroup(after: .appInfo) {
-                Button("Check for Updates") {
-                    // TODO: Implement auto-updater
-                }
-            }
-            
             CommandGroup(replacing: .newItem) {
                 Button("New Book") {
                     apiClient.showNewBookSheet = true
@@ -29,52 +23,79 @@ struct MediaInventoryApp: App {
 
         Settings {
             AppSettingsView()
+                .environmentObject(apiClient)
         }
     }
 }
 
 private struct AppSettingsView: View {
+    @EnvironmentObject var apiClient: APIClient
     @AppStorage("EnableDebugSpotlightIndexing") private var enableDebugSpotlightIndexing = false
     @AppStorage("UseICloudSync") private var useICloudSync = true
-    @AppStorage("ICloudDatabaseActive") private var iCloudDatabaseActive = false
-    @AppStorage("ICloudLastSyncTimeInterval") private var iCloudLastSyncTimeInterval = 0.0
+    @AppStorage("ICloudSyncStatus") private var syncStatus = "Waiting for iCloud"
+    @AppStorage("ICloudSyncError") private var syncError = ""
+    @State private var resolution: DatabaseSnapshotSync.Resolution?
+    @State private var confirmingResolution = false
+    @State private var importURL: URL?
+    @State private var confirmingImport = false
 
     var body: some View {
         Form {
-            Toggle("Enable iCloud database sync", isOn: $useICloudSync)
-            Text("Keeps your database in sync across Macs using the same Apple ID. Restart the app after changing this setting.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
+            Toggle("Enable iCloud inventory sync", isOn: $useICloudSync)
+                .onChange(of: useICloudSync) { _ in apiClient.syncNow() }
+            Text("Syncs your inventory and cover images across Macs using the same Apple ID. If both Macs change before syncing, you can choose which inventory to keep. Copies of both are saved for recovery.")
+                .font(.caption).foregroundColor(.secondary)
+            Text(syncStatus).font(.callout).textSelection(.enabled)
             HStack {
-                Text("Current sync status")
-                Spacer()
-                Text(iCloudDatabaseActive ? "Active" : "Unavailable or Disabled")
-                    .foregroundColor(iCloudDatabaseActive ? .green : .secondary)
+                Button("Sync Now") { apiClient.syncNow() }.disabled(!useICloudSync)
+                Button("Open Sync Backups") {
+                    if let folder = try? APIClient.applicationSupportDirectory().appendingPathComponent("Sync Backups", isDirectory: true) {
+                        do {
+                            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                            NSWorkspace.shared.open(folder)
+                        } catch { apiClient.errorMessage = error.localizedDescription }
+                    }
+                }
             }
-
+            if useICloudSync && !syncError.isEmpty {
+                HStack {
+                    Button("Use This Mac…") { resolution = .keepLocal; confirmingResolution = true }
+                    Button("Use iCloud Copy…") { resolution = .keepCloud; confirmingResolution = true }
+                }
+            }
+            Divider()
             HStack {
-                Text("Last iCloud sync")
-                Spacer()
-                Text(lastSyncLabel)
-                    .foregroundColor(.secondary)
+                Button("Export Inventory…") {
+                    let panel = NSSavePanel()
+                    panel.nameFieldStringValue = "media-inventory-backup.db"
+                    if panel.runModal() == .OK, let url = panel.url { apiClient.exportInventory(to: url) }
+                }
+                Button("Import Inventory…") {
+                    let panel = NSOpenPanel()
+                    panel.allowsMultipleSelection = false
+                    panel.canChooseDirectories = false
+                    if panel.runModal() == .OK, let url = panel.url { importURL = url; confirmingImport = true }
+                }
             }
-
+            #if DEBUG
             Toggle("Enable Spotlight indexing in Debug builds", isOn: $enableDebugSpotlightIndexing)
-            Text("When enabled, the app will index items in Spotlight during Debug runs.")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            #endif
         }
         .padding(20)
-        .frame(width: 460)
-    }
-
-    private var lastSyncLabel: String {
-        guard iCloudLastSyncTimeInterval > 0 else {
-            return "Never"
+        .frame(width: 520)
+        .confirmationDialog("Replace this Mac’s inventory?", isPresented: $confirmingImport) {
+            Button("Import and Replace Inventory") { if let importURL { apiClient.importInventory(from: importURL) } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your current inventory will first be saved in Sync Backups. Imported changes will sync to iCloud when enabled, subject to conflict checks.")
         }
-
-        let date = Date(timeIntervalSince1970: iCloudLastSyncTimeInterval)
-        return date.formatted(date: .abbreviated, time: .shortened)
+        .confirmationDialog("Choose the inventory to keep", isPresented: $confirmingResolution) {
+            Button(resolution == .keepLocal ? "Keep This Mac’s Inventory" : "Keep the iCloud Inventory") {
+                apiClient.syncNow(resolution: resolution)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This replaces the other inventory, including any edits unique to it. Both copies and any iCloud conflict versions will first be saved in Sync Backups on this Mac. They are not merged automatically.")
+        }
     }
 }

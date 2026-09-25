@@ -1,0 +1,22 @@
+name: macOS release checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test snapshot sync and inventory operations
+        run: ./script/test.sh
+      - name: Archive Apple silicon and Intel app
+        run: ./script/archive_app_store.sh --unsigned
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-validation-archive
+          path: work/AppStore/MediaInventory.xcarchive
+          retention-days: 7
