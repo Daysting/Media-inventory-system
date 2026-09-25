@@ -37,4 +37,4 @@ Review contact: Erick Hofer, daysting@daysting.com, +1 763-334-6555. This teleph
 
 ## App Store Connect configuration
 
-App ID: 6765919202. Version 1.6, build 161. Release is manual. Existing pricing is free, with availability in 175 countries/regions. The dashboard screenshot is uploaded. Build 161 completed processing and its encryption questionnaire; it uses Apple system encryption only. Submission status is recorded in the release handoff.
+App ID: 6765919202. Version 1.6, build 162. Release is manual. Existing pricing is free, with availability in 175 countries/regions. The dashboard screenshot is uploaded. Build 162 completed processing and its encryption questionnaire; it uses Apple system encryption only. Submission status is recorded in the release handoff.
