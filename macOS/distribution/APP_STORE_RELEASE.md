@@ -8,7 +8,7 @@
 | Suggested store name (under 30 characters) | Daysting Home Inventory |
 | Bundle ID | `com.erickhofer.MediaInventory` |
 | iCloud container | `iCloud.com.erickhofer.MediaInventory` |
-| Version / build | 1.6 / 160 |
+| Version / build | 1.6 / 161 |
 | Architectures | arm64 and x86_64 |
 | Deployment target | macOS 13.0 |
 | Category | Productivity |
@@ -32,7 +32,7 @@ From the repository root:
 ```sh
 ./script/test.sh
 ./script/archive_app_store.sh --unsigned
-DEVELOPMENT_TEAM=AZ94QYXR6U BUILD_NUMBER=160 ./script/archive_app_store.sh
+DEVELOPMENT_TEAM=AZ94QYXR6U BUILD_NUMBER=161 ./script/archive_app_store.sh
 DEVELOPMENT_TEAM=AZ94QYXR6U ./script/export_app_store.sh
 ```
 
