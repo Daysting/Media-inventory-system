@@ -2,6 +2,8 @@
 
 A native macOS app for books, video games, movies, electronics, borrowers, checkouts, and printable reports. Uses a local SQLite database with optional iCloud document sync.
 
+For help, see [Support](SUPPORT.md). Read the [Privacy Policy](PRIVACY.md) for details about local storage, iCloud, backups, and support communications.
+
 - macOS 13 or later; Apple silicon and Intel.
 - Xcode with the macOS SDK; no third-party dependencies.
 - Bundle identifier: `com.erickhofer.MediaInventory`.
