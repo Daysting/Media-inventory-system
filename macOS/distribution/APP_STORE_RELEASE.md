@@ -5,15 +5,15 @@
 | Setting | Value |
 |---|---|
 | Product | Daysting’s Home Inventory System |
-| Suggested store name (under 30 characters) | Daysting Home Inventory |
+| App Store name | DaystingInventory |
 | Bundle ID | `com.erickhofer.MediaInventory` |
 | iCloud container | `iCloud.com.erickhofer.MediaInventory` |
-| Version / build | 1.6 / 161 |
+| Version / build | 1.6 / 162 |
 | Architectures | arm64 and x86_64 |
 | Deployment target | macOS 13.0 |
 | Category | Productivity |
 
-The store name is a draft; availability has not been checked. Preserve the bundle ID if this is an update to an existing App Store record. Increment `BUILD_NUMBER` for later uploads of this version.
+App Store Connect record: [DaystingInventory (6765919202)](https://appstoreconnect.apple.com/apps/6765919202/distribution). Version 1.6 (162) was submitted on September 25, 2026 and is Waiting for Review. Manual release is enabled; approval will not publish the app automatically. Complete the acceptance tests below before public release. Preserve the bundle ID and increment `BUILD_NUMBER` for later uploads of this version.
 
 ## Apple account and provisioning
 
@@ -32,7 +32,7 @@ From the repository root:
 ```sh
 ./script/test.sh
 ./script/archive_app_store.sh --unsigned
-DEVELOPMENT_TEAM=AZ94QYXR6U BUILD_NUMBER=161 ./script/archive_app_store.sh
+DEVELOPMENT_TEAM=AZ94QYXR6U BUILD_NUMBER=162 ./script/archive_app_store.sh
 DEVELOPMENT_TEAM=AZ94QYXR6U ./script/export_app_store.sh
 ```
 
@@ -59,12 +59,14 @@ The automated suite covers deterministic snapshot decisions, database integrity 
 
 ## Store listing and review
 
-Draft listing copy is in `STORE_LISTING.md`; a factual privacy-policy draft is in `PRIVACY_POLICY.md`. Before submission:
+Listing copy is in `STORE_LISTING.md`. The [privacy policy](https://github.com/Daysting/Media-inventory-system/blob/main/PRIVACY.md) and [support document](https://github.com/Daysting/Media-inventory-system/blob/main/SUPPORT.md) are published on GitHub, linked in App Store Connect, and accessible from Settings and Help in build 162. Review contact is Erick Hofer, daysting@daysting.com, +1 763-334-6555 (voice calls only; no SMS).
+
+For future submissions:
 
 - Publish the reviewed privacy policy at a stable public HTTPS URL and provide a support URL/contact.
 - Confirm the final name, description, keywords, copyright, category, price, regions, age-rating answers, privacy disclosures, export-compliance answers, and review contact.
 - Capture screenshots from the signed Release app using fictional inventory data. Supported Mac screenshot sizes include 1280×800, 1440×900, 2560×1600 and 2880×1800; verify Apple’s current specifications.
-- Run **Validate App** in Xcode Organizer, then upload the exported package through Transporter or Xcode. Select the processed build in App Store Connect and complete TestFlight testing before submitting for review.
+- Run **Validate App** in Xcode Organizer, then upload the exported package through Transporter or Xcode. Select the processed build in App Store Connect. Complete TestFlight acceptance testing before releasing publicly.
 
 Do not promise concurrent editing with automatic record merging. This release syncs whole inventory snapshots and offers explicit conflict resolution with backups.
 
