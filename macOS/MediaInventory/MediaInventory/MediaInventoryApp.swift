@@ -1,5 +1,10 @@
 import SwiftUI
 
+private enum AppLinks {
+    static let privacyPolicy = URL(string: "https://github.com/Daysting/Media-inventory-system/blob/main/PRIVACY.md")!
+    static let support = URL(string: "https://github.com/Daysting/Media-inventory-system/blob/main/SUPPORT.md")!
+}
+
 @main
 struct MediaInventoryApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -18,6 +23,10 @@ struct MediaInventoryApp: App {
                     apiClient.showNewBookSheet = true
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
+            }
+            CommandGroup(replacing: .help) {
+                Link("DaystingInventory Support", destination: AppLinks.support)
+                Link("Privacy Policy", destination: AppLinks.privacyPolicy)
             }
         }
 
@@ -80,6 +89,12 @@ private struct AppSettingsView: View {
             #if DEBUG
             Toggle("Enable Spotlight indexing in Debug builds", isOn: $enableDebugSpotlightIndexing)
             #endif
+            Divider()
+            HStack {
+                Link("Support", destination: AppLinks.support)
+                Spacer()
+                Link("Privacy Policy", destination: AppLinks.privacyPolicy)
+            }
         }
         .padding(20)
         .frame(width: 520)
